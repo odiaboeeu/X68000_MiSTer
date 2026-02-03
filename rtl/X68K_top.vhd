@@ -292,6 +292,7 @@ signal	spreg_BG0TXSEL	:std_logic_vector(1 downto 0);
 signal	spreg_BGON		:std_logic_vector(1 downto 0);
 signal	spreg_HDISP		:std_logic_vector(5 downto 0);
 signal	spreg_VDISP		:std_logic_vector(7 downto 0);
+signal	spreg_LH		:std_logic;
 signal	spreg_VRES		:std_logic_vector(1 downto 0);
 signal	spreg_HRES		:std_logic_vector(1 downto 0);
 signal	bg_chr16		:std_logic;
@@ -708,7 +709,8 @@ signal	dsprbgen	:std_logic_vector(1 downto 0);
 signal  ce          :std_logic := '1';
 signal out_HMODE		:std_logic_vector(1 downto 0);
 signal out_VMODE		:std_logic_vector(1 downto 0);
-signal out_hfreq        :std_logic;
+signal out_hfreq		:std_logic;
+signal gfx_double_scan  :std_logic;
 signal out_htotal		:std_logic_vector(7 downto 0);
 signal out_hsynl		:std_logic_vector(7 downto 0);
 signal out_hvbgn		:std_logic_vector(7 downto 0);
@@ -1638,6 +1640,7 @@ port(
 	memres	:in std_logic;							--0:512x512 1:1024x1024
 	hres	:in std_logic_vector(1 downto 0);		--00:256 01:512 10/11:768
 	vres	:in std_logic;							--0:256 1:512
+	sp_vres	:in std_logic;							--sprite layer vertical resolution: 0=256, 1=512
 	txten	:in std_logic;
 	grpen	:in std_logic;
 	spren	:in std_logic;
@@ -1715,6 +1718,9 @@ port(
 	bg0asel	:in std_logic;
 	bg1asel	:in std_logic;
 	spren	:in std_logic;
+	lh  	:in std_logic := '0';
+	vres	:in std_logic_vector(1 downto 0) := "00";
+	hfreq	:in std_logic := '0';
 
 	hcomp	:in std_logic;
 	linenum	:in std_logic_vector(8 downto 0);
@@ -3202,6 +3208,8 @@ begin
 		rstn	=>srstn
 	);
 
+	gfx_double_scan <= '1' when vr_hfreq='1' and vr_VD="00" and vr_HD(1)='0' else '0';
+
 	vr_GREN<=	vr_GRPEN(4) when vr_GR_SIZE='1' else
 					'0' when vr_GRPEN(3 downto 0)="0000" else
 					'1';
@@ -3276,6 +3284,7 @@ begin
 		memres		=>vr_GR_SIZE,		--0:512x512 1:1024x1024
 		hres	=>out_HMODE,
 		vres	=>out_VMODE(0),
+		sp_vres	=>spreg_VRES(0),
 		txten	=>vr_TXTEN and not dLayers(0),
 		grpen	=>vr_GREN and not dLayers(1),
 		spren	=>vr_SPREN and not dLayers(2),
@@ -3303,7 +3312,7 @@ begin
 		
 		hcomp	=>HCOMP,
 		vpstart	=>VPSTART,
-		hfreq	=>out_hfreq,
+		hfreq	=>gfx_double_scan,  -- Use gfx_double_scan instead of out_hfreq for sprite scaling
 		htotal	=>out_htotal,
 		hvbgn	=>out_hvbgn,
 		hvend	=>out_hvend,
@@ -3387,7 +3396,9 @@ begin
 		bg0asel	=>spreg_BG0TXSEL(0),
 		bg1asel	=>spreg_BG1TXSEL(0),
 		spren	=>spreg_DISPEN,
-
+		lh      =>spreg_LH,
+		vres	=>spreg_VRES,
+		hfreq	=>gfx_double_scan,
 		
 		hcomp	=>HCOMP,
 		linenum	=>spr_y(8 downto 0),
@@ -3454,8 +3465,8 @@ begin
 		HTOTAL	=>open,
 		HDISP	=>spreg_HDISP,
 		VDISP	=>spreg_VDISP,
-		LH		=>open,
-		--VRES	=>spreg_VRES,
+		LH      =>spreg_LH,
+		VRES	=>spreg_VRES,
 		HRES	=>spreg_HRES,
 		
 		sclk	=>sysclk,

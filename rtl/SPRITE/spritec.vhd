@@ -9,6 +9,9 @@ port(
 	bg0asel	:in std_logic;
 	bg1asel	:in std_logic;
 	spren	:in std_logic;
+	lh		:in std_logic := '0';
+	vres	:in std_logic_vector(1 downto 0) := "00";
+	hfreq	:in std_logic := '0';
 
 	hcomp	:in std_logic;
 	linenum	:in std_logic_vector(8 downto 0);
@@ -82,6 +85,7 @@ signal	sp3rdat	:std_logic_vector(7 downto 0);
 signal	sp_clr	:std_logic;
 signal	sp_no	:std_logic_vector(6 downto 0);
 signal	sp_linenum	:std_logic_vector(9 downto 0);
+signal	linenum_adj	:std_logic_vector(8 downto 0);
 signal	sp_xpos	:std_logic_vector(3 downto 0);
 signal	sp_ypos	:std_logic_vector(3 downto 0);
 signal	sp_xposd:std_logic_vector(3 downto 0);
@@ -295,7 +299,8 @@ begin
 	end process;
 
 	sp_clr<=bg0wr;
-	sp_linenum<=linenum+"0000010000";
+	linenum_adj<=linenum;
+	sp_linenum<=('0' & linenum_adj)+"0000010000";
 
 	process(clk,rstn)
 	variable	sp_yposl	:std_logic_vector(9 downto 0);
@@ -318,7 +323,7 @@ begin
 					when sp_setno =>
 						sp_state<=sp_check;
 					when sp_check =>
-						if(sprPRI="00" or sprypos<=linenum or sprypos>sp_linenum)then
+						if(sprPRI="00" or sprypos<=('0' & linenum_adj) or sprypos>sp_linenum)then
 							if(sp_no>lastspno)then
 								sp_no<=sp_no-1;
 								sp_state<=sp_setno;
@@ -326,7 +331,7 @@ begin
 								sp_state<=sp_END;
 							end if;
 						else
-							sp_yposl:=('0' & linenum)-sprypos;
+							sp_yposl:=('0' & linenum_adj)-sprypos;
 							sp_ypos<=sp_yposl(3 downto 0);
 							sp_xpos<=(others=>'0');
 							sp_state<=sp_copy;

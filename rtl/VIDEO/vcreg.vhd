@@ -111,6 +111,8 @@ signal	rCP			:std_logic_vector(3 downto 0);
 signal	rcsrc		:std_logic_vector(7 downto 0);
 signal	rcdst		:std_logic_vector(7 downto 0);
 signal	rtmask		:std_logic_vector(15 downto 0);
+signal	rRCmode		:std_logic;
+signal	rcdst_wr	:std_logic;
 signal	rGR_SIZE	:std_logic;
 signal	rGR_CMODE	:std_logic_vector(1 downto 0);
 signal	rPRI_SP		:std_logic_vector(1 downto 0);
@@ -166,6 +168,8 @@ begin
 				rCP			<=(others=>'0');
 				rcsrc		<=(others=>'0');
 				rcdst		<=(others=>'0');
+				rRCmode		<='0';
+				rcdst_wr	<='0';
 				rGR_SIZE	<='0';
 				rGR_CMODE	<=(others=>'0');
 				rGR_PRI		<=(others=>'0');
@@ -181,6 +185,10 @@ begin
 				rAH			<='0';
 				rYS			<='0';
 			elsif(ce = '1')then
+				rcdst_wr<='0';
+				if(addr(23 downto 1)=addr_RC(23 downto 1) and wr(0)='1')then
+					rRCmode<=wdat(3);
+				end if;
 				case addr(23 downto 1) is
 				when SYS_DC(23 downto 1) =>
 					if(wr(0)='1')then
@@ -336,6 +344,7 @@ begin
 					end if;
 					if(wr(0)='1')then
 						rcdst<=wdat(7 downto 0);
+						rcdst_wr<='1';
 					end if;
 				when VC_R23(23 downto 1) =>
 					if(wr(1)='1')then
@@ -385,7 +394,7 @@ begin
 		end if;
 	end process;
 	
-	RCbgn<='1' when addr(23 downto 1)=addr_RC(23 downto 1) and wr(0)='1' and wdat(3)='1' else '0';
+	RCbgn<='1' when (addr(23 downto 1)=addr_RC(23 downto 1) and wr(0)='1' and wdat(3)='1') or (rRCmode='1' and rcdst_wr='1') else '0';
 	RCend<='1' when addr(23 downto 1)=addr_RC(23 downto 1) and wr(0)='1' and wdat(3)='0' else '0';
 	FCbgn<='1' when addr(23 downto 1)=addr_FC(23 downto 1) and wr(0)='1' and wdat(1)='1' else '0';
 	FCend<='1' when addr(23 downto 1)=addr_FC(23 downto 1) and wr(0)='1' and wdat(1)='0' else '0';

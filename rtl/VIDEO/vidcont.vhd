@@ -85,6 +85,7 @@ port(
 	memres	:in std_logic;							--0:512x512 1:1024x1024
 	hres	:in std_logic_vector(1 downto 0);		--00:256 01:512 10/11:768
 	vres	:in std_logic;							--0:256 1:512
+	sp_vres	:in std_logic;							--sprite layer vertical resolution: 0=256, 1=512
 	txten	:in std_logic;
 	grpen	:in std_logic;
 	spren	:in std_logic;
@@ -357,7 +358,7 @@ begin
 				lhviden<=hviden;
 				exbitd<=exbit;
 				sprite_ind<=sprite_in;
-				--t_ddatd<=t_ddat;
+				t_ddatd<=t_ddat;
 				--g_ddatend<=g_ddaten;
 			end if;
 		end if;
@@ -743,12 +744,13 @@ begin
 	rint<='1' when rintline=rastnum else '0';
 	
 	addrx<=std_logic_vector(unsigned(haddrmod(9 downto 0)) + spr_x_adj_u + 1);
-	addry<=std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u + 1) when (vheight < "000111100000") else
+	addry<=std_logic_vector(unsigned('0' & vaddrmod(9 downto 1)) + unsigned('0' & std_logic_vector(spr_y_adj_u(9 downto 1))) + 1) when (vheight < "000111100000" and vres='1' and sp_vres='0') else
+	       std_logic_vector(unsigned('0' & vaddrmod(9 downto 1)) + unsigned('0' & std_logic_vector(spr_y_adj_u(9 downto 1))))     when (vres='1' and sp_vres='0') else
+	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u + 1) when (vheight < "000111100000") else
 	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u);
 
 	sprio<= '1' when bp='1' and hp='0' else '0';
-	-- if the address of the next highest palette is 0, then the next lowest data will be valid.
-	tdoten<='0' when (txten='0' or tpalin=x"0000") else '1';--or (txt_solid='0' and t_ddatd="0000")   
+	tdoten<='0' when (txten='0' or tpalin=x"0000" or (t_ddatd="0000" and unsigned(pri_tx) < unsigned(pri_gr) and gdoten='1')) else '1';
 	sdoten<='0' when (spren='0' or sprite_ind(3 downto 0)=x"0" or spalin=x"0000") else '1';--or (spr_solid='0' and sprite_ind=x"00")  -- sprite_ind(3 downto 0)=x"0" or
 	gdoten<='0' when (grpen='0' or gpalin=x"0000") else '1';--or (grp_solid='0' and g_ddatend='0')    
 	tpalno<="0000" & t_ddat;

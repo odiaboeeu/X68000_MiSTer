@@ -149,16 +149,16 @@ module mister_sync
 			4'h3: mod_inc = 158888; // HRL:0 HF:0 H:###
 			4'h4: mod_inc = v60hz ? 79862 : 86266;  // HRL:0 HF:1 H:256
 			4'h5: mod_inc = v60hz ? 39931 : 43133;  // HRL:0 HF:1 H:512
-			4'h6: mod_inc = v60hz ? 26621 : 28755;  // HRL:0 HF:1 H:768
-			4'h7: mod_inc = 39722;  // HRL:0 HF:1 H:###
+			4'h6: mod_inc = v60hz ? 33058 : 35714;  // HRL:0 HF:1 H:768 (was 26621/28755, corrected for 30.25MHz)
+			4'h7: mod_inc = 33058;  // HRL:0 HF:1 H:### (768 alternate)			
 			4'h8: mod_inc = v60hz ? 211205 : 205848; // HRL:1 HF:0 H:256
 			4'h9: mod_inc = v60hz ? 105603 : 102924; // HRL:1 HF:0 H:512
 			4'hA: mod_inc = v60hz ? 211205 : 205848; // HRL:1 HF:0 H:768
 			4'hB: mod_inc = 158888; // HRL:1 HF:0 H:###
 			4'hC: mod_inc = v60hz ? 106483 : 115022; // HRL:1 HF:1 H:256
 			4'hD: mod_inc = v60hz ? 53241 : 57511;  // HRL:1 HF:1 H:512
-			4'hE: mod_inc = v60hz ? 26621 : 28755;  // HRL:1 HF:1 H:768
-			4'hF: mod_inc = 39722;  // HRL:1 HF:1 H:###
+			4'hE: mod_inc = v60hz ? 33058 : 35714;  // HRL:1 HF:1 H:768 (was 26621/28755, corrected for 30.25MHz)
+			4'hF: mod_inc = 33058;  // HRL:1 HF:1 H:### (768 alternate)
 			default: mod_inc = 28755;
 		endcase
 	end

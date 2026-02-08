@@ -690,11 +690,6 @@ signal	midi_wr		:std_logic;
 signal	midi_int		:std_logic;
 signal	midi_ivect	:std_logic_vector(7 downto 0);
 
---puu
-signal	midi_sft		:std_logic;
-constant midis_div	:integer	:=(SCFREQ/1000)-1;
-signal	midi_csft	:std_logic;
-
 --Contrast controller
 constant	context	:integer	:=2;
 signal	contval	:std_logic_vector(3+context downto 0);
@@ -2329,27 +2324,8 @@ port(
 	GPIN	:in std_logic_vector(7 downto 0);
 	GPOE	:out std_logic_vector(7 downto 0);
 	
-	gcountsft	:in std_logic;
-	ccountsft	:in std_logic;
-	mcountsft	:in std_logic;
-	
 	clk	:in std_logic;
 	ce  :in std_logic := '1';
-	rstn	:in std_logic
-);
-end component;
-
-component  sftgen
-generic(
-	maxlen	:integer	:=100
-);
-port(
-	len		:in integer range 0 to maxlen;
-	sft		:out std_logic;
-	
-	clk		:in std_logic;
-	ce  		:in std_logic := '1';
-
 	rstn	:in std_logic
 );
 end component;
@@ -2369,22 +2345,6 @@ port(
 	rstn	:in std_logic
 );
 end component;
-
-component sftnpn
-generic(
-	denom	:integer	:=5
-);
-port(
-	numer	:in std_logic_vector(denom-1 downto 0);
-	sftin	:in std_logic;
-	sftout	:out std_logic;
-	
-	clk		:in std_logic;
-	ce      :in std_logic := '1';
-	rstn	:in std_logic
-);
-end component;
-
 
 component pcmclk
 port(
@@ -2637,7 +2597,7 @@ begin
 		
 		int4	=>INT4,
 		vect4	=>IVECT4,
-		iack4	=>IACK4,
+		--iack4	=>IACK4,
 		e_ln4	=>'1',
 		
 		int3	=>INT3,
@@ -4095,9 +4055,9 @@ begin
 	);
 
 	INT2<='0';
-	INT4<=midi_int;
+	INT4<='0';
 	IVECT2<=(others=>'0');
-	IVECT4<=midi_ivect;
+	IVECT4<=(others=>'0');
 
 	INT7<=not pPsw(1);
 
@@ -4116,8 +4076,8 @@ begin
 		DATOUT=>midi_odat,
 		DATWR	=>midi_wr,
 		DATRD	=>midi_rd,
-		INT	=>midi_int,
-		IVECT	=>midi_ivect,
+		--INT	=>midi_int,
+		--IVECT	=>midi_ivect,
 
 		RxD	=>pMidi_in,
 		TxD	=>pMidi_out,
@@ -4129,32 +4089,9 @@ begin
 		GPIN	=>(others=>'1'),
 		GPOE	=>open,
 		
-		gcountsft	=>midi_Sft,		--typo???
-		ccountsft	=>midi_csft,
-		mcountsft	=>midi_sft,
-		
 		clk	=>sysclk,
 		ce  =>sys_ce,
 		rstn	=>srstn
-	);
-	
-	midis	: sftgen generic map(midis_div) port map(
-		len		=>midis_div,
-		sft		=>midi_sft,
-		
-		clk		=>sysclk,
-		ce  		=>sys_ce,
-		rstn		=>srstn
-	);
-
-	midics	:sftnpn generic map(5) port map(
-		numer		=>"10100",
-		sftin		=>'1',
-		sftout		=>midi_csft,
-		
-		clk		=>sysclk,
-		ce  		=>sys_ce,
-		rstn		=>srstn
 	);
 
 	SASI_CS<='1' when abus(23 downto 3)=(x"e9600" & '0') else '0';

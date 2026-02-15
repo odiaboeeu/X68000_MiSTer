@@ -132,7 +132,14 @@ port(
 	dVMode      :in std_logic := '1';
 	-- Debug: layer enable bits (directly active low from OSD, active high enables layer)
 	-- bit 0 = text, bit 1 = graphic, bit 2 = sprite, bit 3 = BG0, bit 4 = BG1
-	dLayers     :in std_logic_vector(4 downto 0) := "00000"
+	dLayers     :in std_logic_vector(4 downto 0) := "00000";
+
+	-- OPM chip selector: 0 = JT51, 1 = IKAOPM
+	opm_sel     :in std_logic := '0';
+
+	-- Per-plane graphics layer disable (active high = layer off)
+	-- bit 0 = G0, bit 1 = G1, bit 2 = G2, bit 3 = G3
+	dGrpLayers  :in std_logic_vector(3 downto 0) := "0000"
 );
 end X68K_top;
 
@@ -475,13 +482,13 @@ signal	t1_rdat2	:std_logic_vector(15 downto 0);
 signal	t1_rdat3	:std_logic_vector(15 downto 0);
 signal	t1_ack		:std_logic;
 
-signal	g0_caddr	:std_logic_vector(RAMAWIDTH-2 downto 7);
+signal	g0_caddr	:std_logic_vector(RAMAWIDTH-2 downto 8);
 signal	g0_clear	:std_logic;
-signal	g1_caddr	:std_logic_vector(RAMAWIDTH-2 downto 7);
+signal	g1_caddr	:std_logic_vector(RAMAWIDTH-2 downto 8);
 signal	g1_clear	:std_logic;
-signal	g2_caddr	:std_logic_vector(RAMAWIDTH-2 downto 7);
+signal	g2_caddr	:std_logic_vector(RAMAWIDTH-2 downto 8);
 signal	g2_clear	:std_logic;
-signal	g3_caddr	:std_logic_vector(RAMAWIDTH-2 downto 7);
+signal	g3_caddr	:std_logic_vector(RAMAWIDTH-2 downto 8);
 signal	g3_clear	:std_logic;
 signal	vlineno		:std_logic_vector(9 downto 0);
 
@@ -541,6 +548,8 @@ signal	vr_GG		:std_logic;
 signal	vr_BP		:std_logic;
 signal	vr_HP		:std_logic;
 signal	vr_EXON		:std_logic;
+signal	vr_GFXBUF	:std_logic;
+signal	vr_TXTBUF	:std_logic;
 signal	vr_VHT		:std_logic;
 signal	vr_AH		:std_logic;
 signal	vr_YS		:std_logic;
@@ -591,6 +600,29 @@ signal	opm_sndr		:std_logic_vector(15 downto 0);
 signal	iowait_opm		:std_logic;
 signal	opm_wstate	:integer range 0 to 3;
 
+-- JT51 outputs
+signal	jt51_odat	:std_logic_vector(7 downto 0);
+signal	jt51_intn	:std_logic;
+signal	jt51_ct1		:std_logic;
+signal	jt51_ct2		:std_logic;
+signal	jt51_sndl	:std_logic_vector(15 downto 0);
+signal	jt51_sndr	:std_logic_vector(15 downto 0);
+signal	jt51_csn		:std_logic;
+
+-- IKAOPM outputs
+signal	ikaopm_odat	:std_logic_vector(7 downto 0);
+signal	ikaopm_doe	:std_logic;
+signal	ikaopm_intn	:std_logic;
+signal	ikaopm_ct1	:std_logic;
+signal	ikaopm_ct2	:std_logic;
+signal	ikaopm_sndl	:std_logic_vector(15 downto 0);
+signal	ikaopm_sndr	:std_logic_vector(15 downto 0);
+signal	ikaopm_csn	:std_logic;
+signal	opm_cen_n	:std_logic;  -- inverted clock enable for IKAOPM
+
+-- Per-plane graphics masking
+signal	vr_GRPEN_masked	:std_logic_vector(4 downto 0);
+
 --for adpcm
 signal	pcm_ce	:std_logic;
 signal	pcm_odat	:std_logic_vector(7 downto 0);
@@ -604,7 +636,6 @@ signal	pcm_sndR	:std_logic_vector(15 downto 0);
 signal	pcm_enL,pcm_enR	:std_logic;
 signal	pcm_clkmode	:std_logic;
 signal	pcm_clkdiv	:std_logic_vector(1 downto 0);
-
 --Sound DAC
 signal	mix_sndL,mix_sndR	:std_logic_vector(15 downto 0);
 signal	sndL,sndR	:std_logic_vector(15 downto 0);
@@ -710,7 +741,7 @@ signal  ce          :std_logic := '1';
 signal out_HMODE		:std_logic_vector(1 downto 0);
 signal out_VMODE		:std_logic_vector(1 downto 0);
 signal out_hfreq		:std_logic;
-signal gfx_double_scan  :std_logic;
+-- signal gfx_double_scan  :std_logic;  -- Removed: sprite doubling now computed inside vidcont
 signal out_htotal		:std_logic_vector(7 downto 0);
 signal out_hsynl		:std_logic_vector(7 downto 0);
 signal out_hvbgn		:std_logic_vector(7 downto 0);
@@ -894,16 +925,16 @@ port(
 	t1_rdat3	:out std_logic_vector(15 downto 0);
 	t1_ack		:out std_logic;
 
-	g0_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g0_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g0_clear	:in std_logic;
 	
-	g1_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g1_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g1_clear	:in std_logic;
 
-	g2_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g2_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g2_clear	:in std_logic;
 
-	g3_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g3_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g3_clear	:in std_logic;
 	
 	fde_addr	:in std_logic_vector(awidth-1 downto 0)	:=(others=>'0');
@@ -1084,6 +1115,7 @@ port(
 	gmode	:in std_logic_vector(1 downto 0);
 	vmode	:in std_logic_vector(1 downto 0);
 	gsize	:in std_logic;
+	gfxbuf	:in std_logic	:='0';
 	rcpybusy:in std_logic  :='0';
 
 	ram_addr	:out std_logic_vector(22 downto 0);
@@ -1612,16 +1644,16 @@ port(
 	t1_rdat2	:in std_logic_vector(15 downto 0);
 	t1_rdat3	:in std_logic_vector(15 downto 0);
 	
-	g0_caddr	:out std_logic_vector(arange-1 downto 7);
+	g0_caddr	:out std_logic_vector(arange-1 downto 8);
 	g0_clear	:out std_logic;
 	
-	g1_caddr	:out std_logic_vector(arange-1 downto 7);
+	g1_caddr	:out std_logic_vector(arange-1 downto 8);
 	g1_clear	:out std_logic;
 
-	g2_caddr	:out std_logic_vector(arange-1 downto 7);
+	g2_caddr	:out std_logic_vector(arange-1 downto 8);
 	g2_clear	:out std_logic;
 
-	g3_caddr	:out std_logic_vector(arange-1 downto 7);
+	g3_caddr	:out std_logic_vector(arange-1 downto 8);
 	g3_clear	:out std_logic;
 
 	t_hoffset	:in std_logic_vector(9 downto 0);
@@ -1641,6 +1673,7 @@ port(
 	hres	:in std_logic_vector(1 downto 0);		--00:256 01:512 10/11:768
 	vres	:in std_logic;							--0:256 1:512
 	sp_vres	:in std_logic;							--sprite layer vertical resolution: 0=256, 1=512
+	sp_lh	:in std_logic;							--sprite controller LH bit ($EB0811 bit4)
 	txten	:in std_logic;
 	grpen	:in std_logic;
 	spren	:in std_logic;
@@ -1825,6 +1858,8 @@ port(
 	BP			:out std_logic;
 	HP			:out std_logic;
 	EXON		:out std_logic;
+	GFXBUF		:out std_logic;
+	TXTBUF		:out std_logic;
 	VHT			:out std_logic;
 	AH			:out std_logic;
 	YS			:out std_logic;
@@ -2162,9 +2197,40 @@ port(
 	left     :out std_logic_vector(15 downto 0);
 	right    :out std_logic_vector(15 downto 0);
 	xleft    :out std_logic_vector(15 downto 0);
-	xright   :out std_logic_vector(15 downto 0);
-	dacleft  :out std_logic_vector(15 downto 0);
-	dacright :out std_logic_vector(15 downto 0)
+	xright   :out std_logic_vector(15 downto 0)
+);
+end component;
+
+component IKAOPM
+generic(
+	FULLY_SYNCHRONOUS :integer := 1;
+	FAST_RESET        :integer := 1;
+	USE_BRAM          :integer := 0
+);
+port(
+	i_EMUCLK         :in  std_logic;
+	i_phiM_PCEN_n    :in  std_logic;
+	i_IC_n           :in  std_logic;
+	o_phi1           :out std_logic;
+	i_CS_n           :in  std_logic;
+	i_RD_n           :in  std_logic;
+	i_WR_n           :in  std_logic;
+	i_A0             :in  std_logic;
+	i_D              :in  std_logic_vector(7 downto 0);
+	o_D              :out std_logic_vector(7 downto 0);
+	o_D_OE           :out std_logic;
+	o_CT2            :out std_logic;
+	o_CT1            :out std_logic;
+	o_IRQ_n          :out std_logic;
+	o_SH1            :out std_logic;
+	o_SH2            :out std_logic;
+	o_SO             :out std_logic;
+	o_EMU_R_SAMPLE   :out std_logic;
+	o_EMU_L_SAMPLE   :out std_logic;
+	o_EMU_R_EX       :out std_logic_vector(15 downto 0);
+	o_EMU_L_EX       :out std_logic_vector(15 downto 0);
+	o_EMU_R          :out std_logic_vector(15 downto 0);
+	o_EMU_L          :out std_logic_vector(15 downto 0)
 );
 end component;
 
@@ -2638,7 +2704,7 @@ begin
 		int4	=>INT4,
 		vect4	=>IVECT4,
 		iack4	=>IACK4,
-		e_ln4	=>'1',
+		e_ln4	=>'0',
 		
 		int3	=>INT3,
 		vect3	=>IVECT3,
@@ -2647,7 +2713,7 @@ begin
 		
 		int2	=>INT2,
 		vect2	=>IVECT2,
-		--iack2	=>IACK2,
+		iack2	=>IACK2,
 		e_ln2	=>'1',
 		
 		int1	=>INT1,
@@ -2794,6 +2860,7 @@ begin
 		gmode	=>vr_col,
 		vmode	=>vr_GR_CMODE,
 		gsize	=>vr_size,
+		gfxbuf	=>vr_GFXBUF,
 		rcpybusy=>vr_rcpybusy,
 		
 		ram_addr	=>ram_addr,
@@ -2830,7 +2897,7 @@ begin
 		AWIDTH		=>24,
 		CAWIDTH		=>9,
 		BRSIZE		=>brsize,
-		BRBLOCKS		=>16,
+		BRBLOCKS		=>32,
 		CLKMHZ		=>RCFREQ,
 		REFINT		=>3,
 		REFCNT		=>64
@@ -3199,6 +3266,8 @@ begin
 		BP			=>vr_BP,
 		HP			=>vr_HP,
 		EXON		=>vr_EXON,
+		GFXBUF		=>vr_GFXBUF,
+		TXTBUF		=>vr_TXTBUF,
 		VHT			=>vr_VHT,
 		AH			=>vr_AH,
 		YS			=>vr_YS,
@@ -3208,11 +3277,21 @@ begin
 		rstn	=>srstn
 	);
 
-	gfx_double_scan <= '1' when vr_hfreq='1' and vr_VD="00" and vr_HD(1)='0' else '0';
+	-- px68k-style sprite doubling: computed inside vidcont by comparing
+	-- CRTC resolution (vr_hfreq, vr_VD) vs sprite controller resolution (spreg_VRES, spreg_LH)
+	-- gfx_double_scan is no longer used for sprite scaling decisions
 
 	vr_GREN<=	vr_GRPEN(4) when vr_GR_SIZE='1' else
 					'0' when vr_GRPEN(3 downto 0)="0000" else
 					'1';
+
+	-- Apply per-plane OSD mask to graphen (active high = disable plane)
+	vr_GRPEN_masked(0) <= vr_GRPEN(0) and not dGrpLayers(0);
+	vr_GRPEN_masked(1) <= vr_GRPEN(1) and not dGrpLayers(1);
+	vr_GRPEN_masked(2) <= vr_GRPEN(2) and not dGrpLayers(2);
+	vr_GRPEN_masked(3) <= vr_GRPEN(3) and not dGrpLayers(3);
+	vr_GRPEN_masked(4) <= vr_GRPEN(4);
+
 	vc	:vidcont generic map(RAMAWIDTH-1) port map(
 		t_base	=>"011100000000000000000000",
 		g_base	=>"011101000000000000000000",
@@ -3285,13 +3364,14 @@ begin
 		hres	=>out_HMODE,
 		vres	=>out_VMODE(0),
 		sp_vres	=>spreg_VRES(0),
-		txten	=>vr_TXTEN and not dLayers(0),
-		grpen	=>vr_GREN and not dLayers(1),
+		sp_lh	=>spreg_LH,
+		txten	=>vr_TXTEN and not dLayers(0) and not vr_TXTBUF,
+		grpen	=>vr_GREN and not dLayers(1) and not vr_GFXBUF,
 		spren	=>vr_SPREN and not dLayers(2),
 --		txten	=>'1',
 --		grpen	=>'1',
 --		spren	=>'1',
-		graphen	=>vr_GRPEN,
+		graphen	=>vr_GRPEN_masked,
 		pri_sp	=>vr_PRI_SP,
 		pri_tx	=>vr_PRI_TX,
 		pri_gr	=>vr_PRI_GR,
@@ -3312,7 +3392,7 @@ begin
 		
 		hcomp	=>HCOMP,
 		vpstart	=>VPSTART,
-		hfreq	=>gfx_double_scan,  -- Use gfx_double_scan instead of out_hfreq for sprite scaling
+		hfreq	=>vr_hfreq,  -- Pass actual CRTC hfreq; sprite doubling computed inside vidcont
 		htotal	=>out_htotal,
 		hvbgn	=>out_hvbgn,
 		hvend	=>out_hvend,
@@ -3398,7 +3478,7 @@ begin
 		spren	=>spreg_DISPEN,
 		lh      =>spreg_LH,
 		vres	=>spreg_VRES,
-		hfreq	=>gfx_double_scan,
+		hfreq	=>vr_hfreq,
 		
 		hcomp	=>HCOMP,
 		linenum	=>spr_y(8 downto 0),
@@ -3886,6 +3966,7 @@ begin
 
 	
 	opm_csn<='0' when abus(23 downto 2)="1110100100000000000000" else '1';
+	opm_cen_n <= not opm_ce(0);
 	
 --	process(sysclk,rstn)begin
 --		if(rstn='0')then
@@ -3921,27 +4002,68 @@ begin
 	-- );
 
 	opm_doe <= b_rd and not opm_csn;
+
+	-- Gate CS_n so only the selected OPM processes bus transactions
+	jt51_csn   <= opm_csn when opm_sel='0' else '1';
+	ikaopm_csn <= opm_csn when opm_sel='1' else '1';
+
 	FM:jt51 port map(
 		rst      => not srstn,
 		clk      => sysclk,
 		cen      => opm_ce(0),
 		cen_p1   => opm_ce(1),
-		cs_n     => opm_csn,
+		cs_n     => jt51_csn,
 		wr_n     => b_wrn(0),
 		a0       => abus(1),
 		din      => dbus(7 downto 0),
-		dout     => opm_odat,
-		ct1      => pcm_clkmode,
-		ct2      => opm_ct2,
-		irq_n    => opm_intn,
+		dout     => jt51_odat,
+		ct1      => jt51_ct1,
+		ct2      => jt51_ct2,
+		irq_n    => jt51_intn,
 		sample   => open,
-		left     => opm_sndl,
-		right    => opm_sndr,
-		xleft    => open,
-		xright   => open,
-		dacleft  => open,
-		dacright => open
+		left     => open,
+		right    => open,
+		xleft    => jt51_sndl,
+		xright   => jt51_sndr
 	);
+
+	FM2:IKAOPM generic map(
+		FULLY_SYNCHRONOUS => 1,
+		FAST_RESET        => 1,
+		USE_BRAM          => 0
+	) port map(
+		i_EMUCLK       => sysclk,
+		i_phiM_PCEN_n  => opm_cen_n,
+		i_IC_n         => srstn,
+		i_CS_n         => ikaopm_csn,
+		i_RD_n         => b_rdn,
+		i_WR_n         => b_wrn(0),
+		i_A0           => abus(1),
+		i_D            => dbus(7 downto 0),
+		o_D            => ikaopm_odat,
+		o_D_OE         => ikaopm_doe,
+		o_CT1          => ikaopm_ct1,
+		o_CT2          => ikaopm_ct2,
+		o_IRQ_n        => ikaopm_intn,
+		o_SH1          => open,
+		o_SH2          => open,
+		o_SO           => open,
+		o_EMU_R_SAMPLE => open,
+		o_EMU_L_SAMPLE => open,
+		o_EMU_R_EX     => open,
+		o_EMU_L_EX     => open,
+		o_EMU_R        => ikaopm_sndr,
+		o_EMU_L        => ikaopm_sndl,
+		o_phi1         => open
+	);
+
+	-- Mux OPM outputs based on selector
+	opm_odat     <= jt51_odat    when opm_sel='0' else ikaopm_odat;
+	opm_intn     <= jt51_intn    when opm_sel='0' else ikaopm_intn;
+	pcm_clkmode  <= jt51_ct1     when opm_sel='0' else ikaopm_ct1;
+	opm_ct2      <= jt51_ct2     when opm_sel='0' else ikaopm_ct2;
+	opm_sndl     <= jt51_sndl    when opm_sel='0' else ikaopm_sndl;
+	opm_sndr     <= jt51_sndr    when opm_sel='0' else ikaopm_sndr;
 
 	pcm_ce<='1' when abus(23 downto 2)="1110100100100000000000" else '0';
 	pcm_wr<=b_wr(0) when pcm_ce='1' else '0';
@@ -3980,6 +4102,7 @@ begin
 	-- pcm_sndL<= (others=>'0') when (pcm_enL='0' and ppi_pcloe='1') else (pcm_snd(11) & pcm_snd & "000");
 	-- pcm_sndR<= (others=>'0') when (pcm_enR='0' and ppi_pcloe='1') else (pcm_snd(11) & pcm_snd & "000");
 	
+	-- PCM audio with enable conditions restored
 	process(sndclk, snd_ce) begin
 		if rising_edge(sndclk) then
 			if (srstn = '0') then
@@ -3988,19 +4111,23 @@ begin
 			elsif (snd_ce = '1') then
 				if (pcm_enL='1' or ppi_pcloe='0') then
 					pcm_sndL<=(pcm_snd(11) & pcm_snd & "000");
+				else
+					pcm_sndL<=(others=>'0');
 				end if;
 				if (pcm_enR='1' or ppi_pcloe='0') then
 					pcm_sndR<=(pcm_snd(11) & pcm_snd & "000");
+				else
+					pcm_sndR<=(others=>'0');
 				end if;
 			end if;
 		end if;
 	end process;
 
-	process(sndclk,srstn,snd_ce)
+	process(sndclk,srstn)
 	begin
 		if(srstn='0')then
 			opm_wstate<=0;
-		elsif(sndclk' event and sndclk='1' and snd_ce = '1')then
+		elsif(sndclk' event and sndclk='1' and opm_ce(0) = '1')then
 			case opm_wstate is
 			when 0 =>
 				if(opm_csn='0' and (b_wrn(0)='0' or b_rdn='0'))then
@@ -4009,6 +4136,8 @@ begin
 			when 1 =>
 				opm_wstate<=2;
 			when 2 =>
+				opm_wstate<=3;
+			when 3 =>
 				if(opm_csn='1')then
 					opm_wstate<=0;
 				end if;
@@ -4018,7 +4147,7 @@ begin
 		end if;
 	end process;
 	
-	iowait_opm<='1' when (opm_csn='0' and (b_wrn(0)='0' or b_rdn='0') and opm_wstate/=2) else '0';
+	iowait_opm<='1' when (opm_csn='0' and (b_wrn(0)='0' or b_rdn='0') and opm_wstate/=3) else '0';
 
 	mixL	:addsat generic map(16) port map(opm_sndL(15) & opm_sndL(15 downto 1),pcm_sndL,mix_sndL,open,open);
 	mixR	:addsat generic map(16) port map(opm_sndR(15) & opm_sndR(15 downto 1),pcm_sndR,mix_sndR,open,open);
@@ -4030,8 +4159,8 @@ begin
 	pSndYML  <= opm_sndL;
 	pSndYMR  <= opm_sndR;
 
+	-- Normal mixer output (OPM + PCM)
 	sndL<=mix_sndL;
-
 	sndR<=mix_sndR;
 	
 	pSndL<=sndL;

@@ -33,6 +33,7 @@ port(
 	gmode	:in std_logic_vector(1 downto 0);
 	vmode	:in std_logic_vector(1 downto 0);
 	gsize	:in std_logic;
+	gfxbuf	:in std_logic	:='0';
 	rcpybusy:in std_logic  :='0';
 
 	ram_addr	:out std_logic_vector(22 downto 0);
@@ -163,7 +164,7 @@ begin
 				g_base+("00000" & m_addr(18 downto 10) & gppage(1) & m_addr(9 downto 2)) when gpconven='1' and vmode="01" else
 				g_base+("00000" & m_addr(18 downto 10) & gppage & m_addr(9 downto 3)) when gpconven='1' and vmode="00" else
 				g_base+("00000" & m_addr(18 downto 1)) when atype=addr_GRAM and (gmode="10" or gmode="11") else
-				g_base+("00000" & m_addr(18 downto 10) & m_addr(19) & m_addr(9 downto 2)) when atype=addr_GRAM and gmode="01" else
+				g_base+("00000" & m_addr(18 downto 1)) when atype=addr_GRAM and gmode="01" else
 				g_base+("00000" & m_addr(18 downto 10) & m_addr(20 downto 19) & m_addr(9 downto 3)) when atype=addr_GRAM and gmode="00" and gsize='0' else
 				g_base+("00000" & m_addr(20 downto 3)) when atype=addr_GRAM and gmode="00" and gsize='1' else
 				(others=>'1');
@@ -176,6 +177,9 @@ begin
 				m_wdat(15 downto 12) & m_wdat(15 downto 12) & m_wdat(15 downto 12) & m_wdat(15 downto 12) when gpconven='1' and vmode="00"and gpstate=gp_p3 else
 				m_wdat( 7 downto  0) & m_wdat( 7 downto  0) when gpconven='1' and vmode="01" and gpstate=gp_p0 else
 				m_wdat(15 downto  8) & m_wdat(15 downto  8) when gpconven='1' and vmode="01" and gpstate=gp_p2 else
+				-- GFXBUF bypass: when R20 bit 11 is set, write raw data without
+				-- color-mode filtering (matching MAME gvram_w buffer path).
+				m_wdat when atype=addr_GRAM and gfxbuf='1' else
 				m_wdat(3 downto 0) & m_wdat(3 downto 0) & m_wdat(3 downto 0) & m_wdat(3 downto 0) when atype=addr_GRAM and gmode="00" else
 				m_wdat(7 downto 0) & m_wdat(7 downto 0) when atype=addr_GRAM and gmode="01" else
 				m_wdat;
@@ -190,13 +194,16 @@ begin
 			SWwr when SWen='1' and MEN='0' else
 			gpwr when gpconven='1' and vmode="01" else
 			b_wrb when atype=addr_GRAM and gmode(1)='1' else
-			"10" when atype=addr_GRAM and gmode="01" and m_addr(1)='0' and b_wrb(0)='1' else
-			"01" when atype=addr_GRAM and gmode="01" and m_addr(1)='1' and b_wrb(0)='1' else
+			b_wrb when atype=addr_GRAM and gfxbuf='1' and m_addr(20)='0' and m_addr(19)='0' else
+			"00" when atype=addr_GRAM and gfxbuf='1' else
+			"01" when atype=addr_GRAM and gmode="01" and m_addr(20)='0' and m_addr(19)='0' and b_wrb/="00" else
+			"10" when atype=addr_GRAM and gmode="01" and m_addr(20)='0' and m_addr(19)='1' and b_wrb/="00" else
 			"00" when atype=addr_GRAM and gmode="00" else
 			b_wrb when atype/=addr_IO else
 			"00";
 	ram_rmw<=
 				gprmw when gpconven='1' and vmode="00" else
+				"00" when atype=addr_GRAM and gfxbuf='1' else
 				"11" when atype=addr_GRAM and gmode="00" and b_wrb(0)='1' else
 				"00" when atype/=addr_TRAM or MEN='0' else
 				"00" when atype=addr_TRAM and rcpybusy='1' else
@@ -209,11 +216,12 @@ begin
 				ram_rdat( 3 downto  0) when m_addr(2 downto 1)="11" else
 				"0000";
 	
-	ram_rdatb<=	ram_rdat(15 downto 8) when m_addr(1)='0' else
+	ram_rdatb<=	ram_rdat(15 downto 8) when m_addr(19)='1' else
 				ram_rdat( 7 downto 0);
 	
 	m_rdat<=
 			gp_rdat when gpconven='1' else
+			ram_rdat when atype=addr_GRAM and gfxbuf='1' else
 			x"000" & ram_rdatq when atype=addr_GRAM and gmode="00" else
 			x"00" & ram_rdatb when  atype=addr_GRAM and gmode="01" else
 			ram_rdat when atype/=addr_IO else

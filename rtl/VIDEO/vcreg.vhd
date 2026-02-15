@@ -68,6 +68,8 @@ port(
 	BP			:out std_logic;
 	HP			:out std_logic;
 	EXON		:out std_logic;
+	GFXBUF		:out std_logic;
+	TXTBUF		:out std_logic;
 	VHT			:out std_logic;
 	AH			:out std_logic;
 	YS			:out std_logic;
@@ -127,6 +129,8 @@ signal	rGG			:std_logic;
 signal	rBP			:std_logic;
 signal	rHP			:std_logic;
 signal	rEXON		:std_logic;
+signal	rGFXBUF		:std_logic;
+signal	rTXTBUF		:std_logic;
 signal	rVHT		:std_logic;
 signal	rAH			:std_logic;
 signal	rYS			:std_logic;
@@ -158,6 +162,8 @@ begin
 				rg3offsety	<=(others=>'0');
 				rsiz		<='0';
 				rcol		<=(others=>'0');
+				rGFXBUF		<='0';
+				rTXTBUF		<='0';
 				rHF			<='0';
 				rVD			<=(others=>'0');
 				rDC         <='0';
@@ -321,6 +327,8 @@ begin
 					end if;
 				when VC_R20(23 downto 1) =>
 					if(wr(1)='1')then
+						rTXTBUF<=wdat(12);
+						rGFXBUF<=wdat(11);
 						rsiz<=wdat(10);
 						rcol<=wdat(9 downto 8);
 					end if;
@@ -395,6 +403,7 @@ begin
 	end process;
 	
 	RCbgn<='1' when (addr(23 downto 1)=addr_RC(23 downto 1) and wr(0)='1' and wdat(3)='1') or (rRCmode='1' and rcdst_wr='1') else '0';
+	--RCbgn<='1' when addr(23 downto 1)=addr_RC(23 downto 1) and wr(0)='1' and wdat(3)='1' else '0';
 	RCend<='1' when addr(23 downto 1)=addr_RC(23 downto 1) and wr(0)='1' and wdat(3)='0' else '0';
 	FCbgn<='1' when addr(23 downto 1)=addr_FC(23 downto 1) and wr(0)='1' and wdat(1)='1' else '0';
 	FCend<='1' when addr(23 downto 1)=addr_FC(23 downto 1) and wr(0)='1' and wdat(1)='0' else '0';
@@ -448,6 +457,8 @@ begin
 	BP			<=rBP;
 	HP			<=rHP;
 	EXON		<=rEXON;
+	GFXBUF		<=rGFXBUF;
+	TXTBUF		<=rTXTBUF;
 	VHT			<=rVHT;
 	AH			<=rAH;
 	YS			<=rYS;
@@ -473,7 +484,7 @@ begin
 		"0000000" &		rg2offsety	when addr(23 downto 1)=VC_R17(23 downto 1) else
 		"0000000" &		rg3offsetx	when addr(23 downto 1)=VC_R18(23 downto 1) else
 		"0000000" &		rg3offsety	when addr(23 downto 1)=VC_R19(23 downto 1) else
-		"00000" & rsiz & rcol	& "000" & rHF & rVD & rHD	when addr(23 downto 1)=VC_R20(23 downto 1) else
+		"000" & rTXTBUF & rGFXBUF & rsiz & rcol	& "000" & rHF & rVD & rHD	when addr(23 downto 1)=VC_R20(23 downto 1) else
 		"000000" & rMEN & rSA & rAP &  rCP	when addr(23 downto 1)=VC_R21(23 downto 1) else
 		rcsrc & rcdst	when addr(23 downto 1)=VC_R22(23 downto 1) else
 		rtmask						when addr(23 downto 1)=VC_R23(23 downto 1) else

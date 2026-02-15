@@ -97,16 +97,16 @@ port(
 	t1_rdat3	:out std_logic_vector(15 downto 0);
 	t1_ack		:out std_logic;
 
-	g0_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g0_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g0_clear	:in std_logic;
 	
-	g1_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g1_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g1_clear	:in std_logic;
 
-	g2_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g2_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g2_clear	:in std_logic;
 
-	g3_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g3_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g3_clear	:in std_logic;
 	
 	fde_addr	:in std_logic_vector(awidth-1 downto 0)	:=(others=>'0');
@@ -283,16 +283,16 @@ port(
 	t1_rdat3	:out std_logic_vector(15 downto 0);
 	t1_ack	:out std_logic;
 
-	g0_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g0_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g0_clear	:in std_logic;
 	
-	g1_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g1_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g1_clear	:in std_logic;
 
-	g2_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g2_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g2_clear	:in std_logic;
 
-	g3_caddr	:in std_logic_vector(awidth-1 downto 7);
+	g3_caddr	:in std_logic_vector(awidth-1 downto 8);
 	g3_clear	:in std_logic;
 	
 	fde_addr	:in std_logic_vector(awidth-1 downto 0)	:=(others=>'0');

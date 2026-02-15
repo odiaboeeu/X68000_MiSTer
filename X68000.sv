@@ -229,6 +229,7 @@ parameter CONF_STR = {
 	"-;",
 	"P4,Audio & Video;",
 	"P4-;",
+	"P4oQ,OPM Chip,JT51,IKAOPM;",
 	"P4O23,Stereo Mix,None,25%,50%,100%;",
 //	"d0P4OM,Vertical Crop,Disabled,216p(5x);",
 	"d0P4ONQ,Crop Offset,0,2,4,8,10,12,-12,-10,-8,-6,-4,-2;",
@@ -265,6 +266,11 @@ parameter CONF_STR = {
 	"P6oN,Sprite Layer,On,Off;",
 	"P6oO,BG0 Layer,On,Off;",
 	"P6oP,BG1 Layer,On,Off;",
+	"P6-;",
+	"P6oR,Graph G0,On,Off;",
+	"P6oS,Graph G1,On,Off;",
+	"P6oT,Graph G2,On,Off;",
+	"P6oU,Graph G3,On,Off;",
 	"-;",
 	"J,Button 1,Button 2,Run,Select,Button 3,Button 4,Button 5,Button 6;",
 	"jn,A,B,Run,Select,X,Y,L,R;",
@@ -649,7 +655,7 @@ mt32pi mt32pi
 (
 	.*,
 	.reset(mt32_reset),
-	.midi_tx(midi_txd | mt32_mute)
+	.midi_tx(UART_TXD | mt32_mute)
 );
 
 reg mt32_info_req;
@@ -700,10 +706,6 @@ wire [1:0] kbdtype = status[35:34];
 
 assign CLK_VIDEO = clk_vid;
 assign AUDIO_S = 1;
-
-//puu
-wire midi_txd;
-wire midi_rxd=1;
 
 wire disk_led;
 
@@ -828,12 +830,8 @@ X68K_top X68K_top
 
 	.pkbdtype(kbdtype),
 
-	//puu
-	.pMidi_in(midi_rxd),
-	.pMidi_out(midi_txd),
-
-	//.pMidi_in(UART_RXD),
-	//.pMidi_out(UART_TXD),
+	.pMidi_in(UART_RXD),
+	.pMidi_out(UART_TXD),
 
 	.pVideoR(red),
 	.pVideoG(green),
@@ -857,7 +855,9 @@ X68K_top X68K_top
 	.rstn(reset_n & ~reset),
 	.dHMode(status[45:44]),
 	.dVMode(status[46]),
-	.dLayers(status[57:53])   // Debug: oL=Text, oM=Graphic, oN=Sprite, oO=BG0, oP=BG1
+	.dLayers(status[57:53]),   // Debug: oL=Text, oM=Graphic, oN=Sprite, oO=BG0, oP=BG1
+	.opm_sel(status[58]),      // oQ: OPM Chip select (0=JT51, 1=IKAOPM)
+	.dGrpLayers(status[62:59]) // oR=G0, oS=G1, oT=G2, oU=G3
 );
 
 wire ldr_ack;

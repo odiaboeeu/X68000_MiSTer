@@ -174,6 +174,9 @@ signal	drqeclr:std_logic;
 signal	ldrq	:std_logic;
 signal	CONT	:std_logic;
 signal	CONT_clr:std_logic;
+signal	CCR_CNT_clr:std_logic;
+signal	BAR_clr:std_logic;
+signal	BTC_clr:std_logic;
 
 signal	TERR_SET	:std_logic;
 signal	CERR_SET	:std_logic;
@@ -211,11 +214,10 @@ begin
 	DITR	:g_srff port map(S_DITset,S_DITres,S_DIT,clk,ce,rstn);
 	PCTR	:g_srff port map(S_PCTset,S_PCTres,S_PCT,clk,ce,rstn);
 
-	S_BTCres<=CCR_CNT;
+	S_BTCres<=regwdat(14) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
 	S_COCset<=int_comp;
 
 	S_COCres<=regwdat(15) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
---	S_BTCres<=regwdat(14) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
 	S_NDTres<=regwdat(13) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
 	S_ERRres<=regwdat(12) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
 	S_DITres<=regwdat(10) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
@@ -291,6 +293,9 @@ begin
 						CCR_SAB<=regwdat(4);
 						CCR_INT<=regwdat(3);
 					end if;
+				if(CCR_CNT_clr='1')then
+					CCR_CNT<='0';
+				end if;
 				when "10010" =>
 					if(regwr(0)='1')then
 						NIV<=regwdat(7 downto 0);
@@ -445,6 +450,9 @@ begin
 				if(BTC_dec='1')then
 					BTC<=BTC-x"0001";
 				end if;
+				if(BTC_clr='1')then
+					BTC<=(others=>'0');
+				end if;
 			end if;
 		end if;
 	end process;
@@ -475,6 +483,9 @@ begin
 					BAR(15 downto 0)<=b_indatl;
 				elsif(BAR_inc='1')then
 					BAR<=BAR+x"00000006";
+				end if;
+				if(BAR_clr='1')then
+					BAR<=(others=>'0');
 				end if;
 			end if;
 		end if;
@@ -642,6 +653,9 @@ begin
 				MFC_BFC		<='0';
 
 				CONT_clr<='0';
+				CCR_CNT_clr<='0';
+				BAR_clr<='0';
+				BTC_clr<='0';
 				int_comp<='0';
 				S_BTCset<='0';
 				CONTMODE<='0';
@@ -675,6 +689,9 @@ begin
 				BAR_inc		<='0';
 				MFC_BFC		<='0';
 				CONT_clr<='0';
+				CCR_CNT_clr<='0';
+				BAR_clr<='0';
+				BTC_clr<='0';
 --puu				
 				if(is_ch3='1') then
 					ldrq<=drqx;
@@ -972,20 +989,7 @@ begin
 									DAR_decw<='1';
 									bytecnt<=0;
 									MTC_dec<='1';
-									if(MTC=x"0001")then
-										if(CCR_CNT='1')then
-											S_BTCset<='1';
-											STATE<=ST_NBLOCK;
-										elsif(OCR_CHAIN(1)='1')then
-											STATE<=ST_NBLOCK;
-										else
-											busreq<='0';
-											int_comp<='1';
-											STATE<=ST_IDLE;
-										end if;
-									else
-										STATE<=ST_CONT;
-									end if;
+									STATE<=ST_CONT;
 								else
 									MAR_incw<='1';
 									DAR_incw<='1';
@@ -1059,11 +1063,7 @@ begin
 									DAR_dec3<='1';
 									bytecnt<=0;
 									MTC_dec<='1';
-									if(MTC=x"0001")then
-										STATE<=ST_NBLOCK;
-									else
-										STATE<=ST_CONT;
-									end if;
+									STATE<=ST_CONT;
 								else
 									MAR_incb<='1';
 									DAR_incb<='1';
@@ -1078,10 +1078,14 @@ begin
 					when ST_NBLOCK =>
 						case OCR_CHAIN is
 						when "00" =>
-							if(CONT='1')then
-								CONT_clr<='1';
+							if(CCR_CNT='1' and BAR/=x"00000000")then
 								MTC_BTC<='1';
 								MFC_BFC<='1';
+								MAR_BAR<='1';
+								S_BTCset<='1';
+								CCR_CNT_clr<='1';
+								BAR_clr<='1';
+								BTC_clr<='1';
 								STATE<=ST_BUSCONT;
 							else
 								int_comp<='1';
@@ -1262,7 +1266,18 @@ begin
 							end if;
 						when others =>
 						end case;
-						if(OCR_BTD='1' and GCR_BT/="00")then
+						if(MTC=x"0001")then
+							if(CCR_CNT='1')then
+								S_BTCset<='1';
+								STATE<=ST_NBLOCK;
+							elsif(OCR_CHAIN(1)='1')then
+								STATE<=ST_NBLOCK;
+							else
+								busreq<='0';
+								int_comp<='1';
+								STATE<=ST_IDLE;
+							end if;
+						elsif(OCR_BTD='1' and GCR_BT/="00")then
 							busreq<='0';
 							STATE<=ST_RQWAIT;
 						else

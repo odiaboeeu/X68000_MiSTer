@@ -12,6 +12,7 @@ set_global_assignment -name QIP_FILE  rtl/SCC/scc.qip
 set_global_assignment -name QIP_FILE  rtl/rtc/rtc.qip
 set_global_assignment -name QIP_FILE  rtl/sound/sound.qip
 set_global_assignment -name QIP_FILE  rtl/sound/jt51/jt51.qip
+set_global_assignment -name QIP_FILE  rtl/sound/IKAOPM/IKAOPM.qip
 set_global_assignment -name QIP_FILE  rtl/SPRITE/sprite.qip
 set_global_assignment -name QIP_FILE  rtl/USART/usart.qip
 set_global_assignment -name QIP_FILE  rtl/VIDEO/video.qip

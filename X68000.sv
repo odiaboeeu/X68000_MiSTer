@@ -682,17 +682,17 @@ wire [7:0] red, green, blue;
 wire HBlank, VBlank, HSync, VSync, ce_pix, vid_de;
 
 wire snd_clockmode;
-reg sys_ce;
-reg mpu_cep;
-reg mpu_cen;
-reg snd_ce;
+reg sys_ce = 0;
+reg mpu_cep = 0;
+reg mpu_cen = 0;
+reg snd_ce = 0;
 reg [1:0] opm_ce = 0;
 
 always @(posedge clk_sys) begin
-	reg [4:0] div_opm;
-	reg [1:0] div_sys;
-	reg [3:0] div_snd;
-	reg [3:0] div_snd2;
+	reg [4:0] div_opm = 0;
+	reg [1:0] div_sys = 0;
+	reg [3:0] div_snd = 0;
+	reg [3:0] div_snd2 = 0;
 	reg turbo = 0;
 
 	div_sys <= div_sys + 1'd1;

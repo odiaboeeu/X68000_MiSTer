@@ -226,7 +226,7 @@ begin
 	PCTR	:g_srff port map(S_PCTset,S_PCTres,S_PCT,clk,ce,rstn);
 
 	S_BTCres<=regwdat(14) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
-	SABevt<='1' when CCR_SAB='1' and CHactive='1' and is_ch3='1' else '0';
+	SABevt<='1' when CCR_SAB='1' and CHactive='1' else '0';
 	MERR_EVT<='1' when STATE=ST_IDLE and CHactive='1' and
 	                     OCR_CHAIN="00" and MTC=x"0000" else '0';
 	sabevt_out<=SABevt;

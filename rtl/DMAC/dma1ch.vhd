@@ -1530,31 +1530,10 @@ begin
 	end process;
 
 
-	process(clk,rstn)begin
-		if rising_edge(clk) then
-			if(rstn='0')then
-				irq<='0';
-				ivect<=(others=>'0');
-			elsif(ce = '1')then
-				if(int_comp='1')then
-					irq<='1';
-					ivect<=NIV;
-				elsif(S_BTCset='1')then
-					irq<='1';
-					ivect<=NIV;
-				elsif(S_ERRset='1')then
-					irq<='1';
-					ivect<=EIV;
-				elsif(iack='1')then
-					irq<='0';
-					ivect<=(others=>'0');
-				end if;
-				if(CCR_INT='0')then
-					irq<='0';
-				end if;
-			end if;
-		end if;
-	end process;
+        irq<='1' when CCR_INT='1' and
+                     (S_COC='1' or S_BTC='1' or
+                      (S_PCT='1' and DCR_PCL="01")) else '0';
+        ivect<=EIV when S_ERR='1' else NIV;
 
 	reqg<='1' when OCR_REQG="00" else '0';
 	pri<=CPR_CP;

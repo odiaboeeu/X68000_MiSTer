@@ -214,7 +214,7 @@ begin
 	dtc <= '0';
 	pclo <= '0';
 
-	S_NDTset <= int_comp;
+	S_NDTset <= donei;
 	S_DITset <= '0';
 	S_PCTset <= '0';
 

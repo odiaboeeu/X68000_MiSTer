@@ -1508,7 +1508,9 @@ begin
 				S_CER<=(others=>'0');
 			elsif(ce = '1')then
 				S_ERRset<='0';
-				if(MERR_EVT='1')then
+				if(S_ERRres='1')then
+				        S_CER<=(others=>'0');
+				elsif(MERR_EVT='1')then
 					S_CER<="01101";
 					S_ERRset<='1';
 				elsif(SABevt='1')then

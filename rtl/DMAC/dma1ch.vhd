@@ -1053,6 +1053,7 @@ begin
 							end if;
 						end if;
 					when ST_NEXT =>
+					        dack<='0';
 						if(OCR_SIZE/="10")then
 							case SCR_MAC is
 							when "01" =>

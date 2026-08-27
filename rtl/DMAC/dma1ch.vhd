@@ -231,7 +231,7 @@ begin
 	                     OCR_CHAIN="00" and MTC=x"0000" else '0';
 	sabevt_out<=SABevt;
 	S_COCset<=int_comp or SABevt;
-	S_BTCset_x<=S_BTCset or int_comp;
+	S_BTCset_x<=S_BTCset;
 
 	S_COCres<=regwdat(15) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
 	S_NDTres<=regwdat(13) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';

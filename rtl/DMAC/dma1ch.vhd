@@ -1531,7 +1531,7 @@ begin
 
 
         irq<='1' when CCR_INT='1' and
-                     (S_COC='1' or S_BTC='1' or
+                     (S_ERR='1' or S_COC='1' or S_BTC='1' or
                       (S_PCT='1' and DCR_PCL="01")) else '0';
         ivect<=EIV when S_ERR='1' else NIV;
 

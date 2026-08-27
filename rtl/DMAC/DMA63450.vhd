@@ -205,6 +205,7 @@ begin
 				pri2(1 downto 0)<="00";
 				pri3(1 downto 0)<="00";
 				actch<=4;
+				busactv<=(others=>'0');
 	--			lm_as:='1';
 			elsif(ce = '1')then
 				c_pri:="1111";
@@ -581,6 +582,7 @@ begin
 		if rising_edge(clk) then
 			if(rstn='0')then
 				bwcount<=0;
+				brcount<=0;
 				bren<='1';
 			elsif(ce = '1')then
 				if(actch/=4)then

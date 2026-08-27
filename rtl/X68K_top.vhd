@@ -200,6 +200,7 @@ signal   i_rwn     :std_logic;
 signal   i_ASn     :std_logic;
 
 -- for memorymap
+signal	m_addr	:std_logic_vector(31 downto 0);
 signal	m_odat	:std_logic_vector(15 downto 0);
 signal	m_doe	:std_logic;
 signal	m_ack	:std_logic;

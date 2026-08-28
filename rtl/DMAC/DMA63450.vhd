@@ -223,7 +223,7 @@ begin
 					when others =>
 						n_pri:="1111";
 					end case;
-					if(busreqv(i)='1' and (reqgv(i)='0' or bren='1') and n_pri<=c_pri)then
+					if(busreqv(i)='1' and (reqgv(i)='0' or bren='1') and n_pri<c_pri)then
 						channel:=i;
 						c_pri:=n_pri;
 					end if;

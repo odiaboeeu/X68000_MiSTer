@@ -279,6 +279,8 @@ begin
 				CCR_SAB<='0';
 				CCR_INT<='0';
 				CPR_CP<=(others=>'0');
+				NIV<=x"0F";
+				EIV<=x"0F";
 			elsif(ce = '1')then
 				CCR_STR<='0';
 				CCR_SAB<='0';

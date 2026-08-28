@@ -1460,7 +1460,7 @@ begin
 							end case;
 						end if;
 					when ST_BUSCONT =>
-						if(MAR=x"00000000")then
+						if(OCR_CHAIN="11" and BAR=x"00000000")then
 							int_comp<='1';
 							busreq<='0';
 							STATE<=ST_IDLE;

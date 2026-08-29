@@ -193,6 +193,24 @@ signal	CERR_SET	:std_logic;
 signal	MERR_EVT	:std_logic;
 signal	TERR_CNT	:std_logic;
 signal	CERR_CNT	:std_logic;
+signal REGWR_ACTIVE :std_logic;
+signal WR_EVT       :std_logic;
+signal START_EVT      :std_logic;
+signal CNT_EVT        :std_logic;
+signal STR_ACCESS_ERR :std_logic;
+signal PROT_WRITE_EVT :std_logic;
+signal WRITE_REJECT   :std_logic;
+signal PROTECTED_BLOCK:std_logic;
+signal START_TERR     :std_logic;
+signal START_MERR     :std_logic;
+signal START_BERR     :std_logic;
+signal LOAD_MERR      :std_logic;
+signal START_CERR     :std_logic;
+signal CNT_TERR       :std_logic;
+signal CNT_CERR       :std_logic;
+signal DMA_ERROR_EVT  :std_logic;
+signal START_VALID    :std_logic;
+signal DMA_ERROR_CODE :std_logic_vector(4 downto 0);
 
 signal	regrdatx	:std_logic_vector(15 downto 0);
 signal	b_indatl	:std_logic_vector(15 downto 0);
@@ -210,6 +228,98 @@ port(
 );
 end component;
 begin
+
+	WR_EVT<='1' when regwr/="00" and REGWR_ACTIVE='0' else '0';
+
+	START_EVT<='1' when WR_EVT='1' and
+	                    regaddr(5 downto 1)="00011" and
+	                    regwr(0)='1' and regwdat(7)='1' else '0';
+
+	CNT_EVT<='1' when WR_EVT='1' and
+	                  regaddr(5 downto 1)="00011" and
+	                  regwr(0)='1' and regwdat(6)='1' else '0';
+
+	STR_ACCESS_ERR<='1' when START_EVT='1' and regwr(1)='1' else '0';
+
+	PROT_WRITE_EVT<='1' when WR_EVT='1' and
+	                         (CCR_STR='1' or CHactive='1') and
+	                         ((regaddr(5 downto 1)="00010" and regwr/="00") or
+	                          (regaddr(5 downto 1)="00011" and regwr(1)='1') or
+	                          (regaddr(5 downto 1)="00101" and regwr/="00") or
+	                          ((regaddr(5 downto 1)="00110" or
+	                            regaddr(5 downto 1)="00111") and regwr/="00") or
+	                          ((regaddr(5 downto 1)="01010" or
+	                            regaddr(5 downto 1)="01011") and regwr/="00") or
+	                          (regaddr(5 downto 1)="10100" and regwr(0)='1') or
+	                          (regaddr(5 downto 1)="11000" and regwr(0)='1'))
+	                else '0';
+
+PROTECTED_BLOCK<=PROT_WRITE_EVT or WRITE_REJECT or STR_ACCESS_ERR;
+
+START_TERR<='1' when START_EVT='1' and
+                     (STR_ACCESS_ERR='1' or CHactive='1' or
+                      S_COC='1' or S_BTC='1' or
+                      S_NDT='1' or S_ERR='1') else '0';
+
+START_MERR<='1' when START_EVT='1' and
+                     OCR_CHAIN="00" and MTC=x"0000" else '0';
+
+START_BERR<='1' when START_EVT='1' and
+                     OCR_CHAIN="10" and BTC=x"0000" else '0';
+
+LOAD_MERR<='1' when (MTC_load='1' and b_indatl=x"0000") or
+                    (MTC_BTC='1' and BTC=x"0000") else '0';
+
+START_CERR<='1' when START_EVT='1' and
+                     (DCR_XRM="01" or SCR_MAC="11" or
+                      SCR_DAC="11" or OCR_CHAIN="01" or
+                      (DCR_DTYPE(1)='1' and
+                       ((DCR_DPS='0' and OCR_SIZE/="00") or
+                        (DCR_DPS='1' and OCR_SIZE/="01"))) or
+                      (DCR_DTYPE(1)='0' and DCR_DPS='1' and
+                       OCR_SIZE="00" and OCR_REQG(1)='1') or
+                      (DCR_DTYPE(1)='0' and DCR_DPS='1' and
+                       OCR_SIZE="11")) else '0';
+
+CNT_TERR<='1' when CNT_EVT='1' and
+                   ((CHactive='0' and START_EVT='0') or
+                    (CHactive='1' and S_BTC='1')) else '0';
+
+CNT_CERR<='1' when CNT_EVT='1' and
+                   (CHactive='1' or START_EVT='1') and
+                   OCR_CHAIN(1)='1' else '0';
+
+DMA_ERROR_EVT<=START_TERR or PROT_WRITE_EVT or CNT_TERR or
+               START_MERR or START_BERR or LOAD_MERR or
+               START_CERR or CNT_CERR;
+
+START_VALID<='1' when START_EVT='1' and DMA_ERROR_EVT='0' else '0';
+
+DMA_ERROR_CODE<=
+        "00010" when START_TERR='1' or PROT_WRITE_EVT='1' or CNT_TERR='1' else
+        "01101" when START_MERR='1' or LOAD_MERR='1' else
+        "01111" when START_BERR='1' else
+        "00001" when START_CERR='1' or CNT_CERR='1' else
+        "00000";
+
+	process(clk,rstn)begin
+		if rising_edge(clk) then
+			if(rstn='0')then
+				REGWR_ACTIVE<='0';
+				WRITE_REJECT<='0';
+			elsif(ce='1')then
+				if(regwr/="00")then
+					REGWR_ACTIVE<='1';
+					if(PROT_WRITE_EVT='1' or STR_ACCESS_ERR='1')then
+						WRITE_REJECT<='1';
+					end if;
+				else
+					REGWR_ACTIVE<='0';
+					WRITE_REJECT<='0';
+				end if;
+			end if;
+		end if;
+	end process;
 
 	dtc <= '0';
 	pclo <= '0';
@@ -230,7 +340,7 @@ begin
 	MERR_EVT<='1' when STATE=ST_IDLE and CHactive='1' and
 	                     OCR_CHAIN="00" and MTC=x"0000" else '0';
 	sabevt_out<=SABevt;
-	S_COCset<=int_comp or SABevt;
+	S_COCset<=int_comp or SABevt or DMA_ERROR_EVT;
 	S_BTCset_x<=S_BTCset;
 
 	S_COCres<=regwdat(15) when regaddr(5 downto 1)="00000" and regwr(1)='1' else '0';
@@ -284,13 +394,13 @@ begin
 				CCR_SAB<='0';
 				case regaddr(5 downto 1) is
 				when "00010" =>
-					if(regwr(1)='1')then
+					if(regwr(1)='1' and PROTECTED_BLOCK='0')then
 						DCR_XRM<=regwdat(15 downto 14);
 						DCR_DTYPE<=regwdat(13 downto 12);
 						DCR_DPS<=regwdat(11);
 						DCR_PCL<=regwdat(9 downto 8);
 					end if;
-					if(regwr(0)='1')then
+					if(regwr(0)='1' and PROTECTED_BLOCK='0')then
 						OCR_DIR<=regwdat(7);
 						OCR_BTD<=regwdat(6);
 						OCR_SIZE<=regwdat(5 downto 4);
@@ -298,12 +408,12 @@ begin
 						OCR_REQG<=regwdat(1 downto 0);
 					end if;
 				when "00011" =>
-					if(regwr(1)='1')then
+					if(regwr(1)='1' and PROTECTED_BLOCK='0')then
 						SCR_MAC<=regwdat(11 downto 10);
 						SCR_DAC<=regwdat(9 downto 8);
 					end if;
 					if(regwr(0)='1')then
-						CCR_STR<=regwdat(7);
+						CCR_STR<=START_VALID;
 						if(regwdat(6)='1')then
 							CCR_CNT<='1';
 						end if;
@@ -325,8 +435,8 @@ begin
 					end if;
 				when others =>
 				end case;
-				if(CCR_CNT_clr='1' or CCR_SAB='1' or MERR_EVT='1' or
-				   int_comp='1')then
+				if(CCR_CNT_clr='1' or CCR_SAB='1' or DMA_ERROR_EVT='1' or
+				   MERR_EVT='1' or int_comp='1')then
 					CCR_CNT<='0';
 				end if;
 			end if;
@@ -348,7 +458,7 @@ begin
 			if(rstn='0')then
 				MTC<=(others=>'0');
 			elsif(ce = '1')then
-				if(regaddr(5 downto 1)="00101")then
+				if(regaddr(5 downto 1)="00101" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
 						MTC(15 downto 8)<=regwdat(15 downto 8);
 					end if;
@@ -374,14 +484,14 @@ begin
 			if(rstn='0')then
 				MAR<=(others=>'0');
 			elsif(ce = '1')then
-				if(regaddr(5 downto 1)="00110")then
+				if(regaddr(5 downto 1)="00110" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
 						MAR(31 downto 24)<=regwdat(15 downto 8);
 					end if;
 					if(regwr(0)='1')then
 						MAR(23 downto 16)<=regwdat(7 downto 0);
 					end if;
-				elsif(regaddr(5 downto 1)="00111")then
+				elsif(regaddr(5 downto 1)="00111" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
 						MAR(15 downto 8)<=regwdat(15 downto 8);
 					end if;
@@ -419,14 +529,14 @@ begin
 			if(rstn='0')then
 				DAR<=(others=>'0');
 			elsif(ce = '1')then
-				if(regaddr(5 downto 1)="01010")then
+				if(regaddr(5 downto 1)="01010" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
 						DAR(31 downto 24)<=regwdat(15 downto 8);
 					end if;
 					if(regwr(0)='1')then
 						DAR(23 downto 16)<=regwdat(7 downto 0);
 					end if;
-				elsif(regaddr(5 downto 1)="01011")then
+				elsif(regaddr(5 downto 1)="01011" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
 						DAR(15 downto 8)<=regwdat(15 downto 8);
 					end if;
@@ -521,7 +631,7 @@ begin
 			if(rstn='0')then
 				MFC<=(others=>'0');
 			elsif(ce = '1')then
-				if(regaddr(5 downto 1)="10100" and regwr(0)='1')then
+				if(regaddr(5 downto 1)="10100" and regwr(0)='1' and PROTECTED_BLOCK='0')then
 					MFC<=regwdat(2 downto 0);
 				elsif(MFC_BFC='1')then
 					MFC<=BFC;
@@ -535,7 +645,7 @@ begin
 			if(rstn='0')then
 				DFC<=(others=>'0');
 			elsif(ce = '1')then
-				if(regaddr(5 downto 1)="11000" and regwr(0)='1')then
+				if(regaddr(5 downto 1)="11000" and regwr(0)='1' and PROTECTED_BLOCK='0')then
 					DFC<=regwdat(2 downto 0);
 				end if;
 			end if;
@@ -557,7 +667,7 @@ begin
 
 	S_PCS<=pcli;
 
-	S_ACT<='0' when STATE=ST_IDLE else '1';
+	S_ACT<=CHactive;
 	buschk<=reqwait when STATE=ST_BUSWAIT or STATE=ST_CHAINBUSWAIT else '0';
 
 	process(clk,rstn)begin
@@ -607,9 +717,9 @@ begin
 				CHactive<='0';
 				STRpend<='0';
 			elsif(ce = '1')then
-				if(CCR_STR='1')then
+				if(START_VALID='1')then
 					CHactive<='1';
-				elsif(MERR_EVT='1')then
+				elsif(DMA_ERROR_EVT='1' or MERR_EVT='1')then
 					CHactive<='0';
 				elsif(CCR_SAB='1')then
 					CHactive<='0';
@@ -738,7 +848,20 @@ begin
 				int_comp<='0';
 				S_BTCset<='0';
 				drqeclr<='0';
-				if(reqwait='1')then
+				if(DMA_ERROR_EVT='1')then
+					busreq<='0';
+					STATE<=ST_IDLE;
+					reqwait<='0';
+					drqeclr<='1';
+					dack<='0';
+					d_rd<='0';
+					d_wr<='0';
+					b_as<='1';
+					b_rwn<='1';
+					b_uds<='1';
+					b_lds<='1';
+					b_doe<='0';
+				elsif(reqwait='1')then
 					reqwait<='0';
 				else
 					case STATE is
@@ -1516,21 +1639,26 @@ begin
 			elsif(ce = '1')then
 				S_ERRset<='0';
 				if(S_ERRres='1')then
-				        S_CER<=(others=>'0');
-				elsif(MERR_EVT='1')then
-					S_CER<="01101";
-					S_ERRset<='1';
-				elsif(SABevt='1')then
-					S_CER<="10001";
-					S_ERRset<='1';
-				elsif(CERR_SET='1')then
-					S_CER<="00001";
-					S_ERRset<='1';
-				elsif(TERR_SET='1')then
-					S_CER<="00010";
-					S_ERRset<='1';
-				elsif(int_comp='1')then
-					S_CER<="00000";
+					S_CER<=(others=>'0');
+				elsif(S_ERR='0')then
+					if(DMA_ERROR_EVT='1')then
+						S_CER<=DMA_ERROR_CODE;
+						S_ERRset<='1';
+					elsif(MERR_EVT='1')then
+						S_CER<="01101";
+						S_ERRset<='1';
+					elsif(SABevt='1')then
+						S_CER<="10001";
+						S_ERRset<='1';
+					elsif(CERR_SET='1')then
+						S_CER<="00001";
+						S_ERRset<='1';
+					elsif(TERR_SET='1')then
+						S_CER<="00010";
+						S_ERRset<='1';
+					elsif(int_comp='1')then
+						S_CER<="00000";
+					end if;
 				end if;
 			end if;
 		end if;

@@ -1341,8 +1341,13 @@ DMA_ERROR_CODE<=
 										STATE<=ST_BUSWAIT;
 										reqwait<='1';
 									when "10" | "11" =>
-										busreq<='0';
-										STATE<=ST_RQWAIT;
+										if(DCR_XRM="00" and drqx='1')then
+											STATE<=ST_BUSWAIT;
+											reqwait<='1';
+										else
+											busreq<='0';
+											STATE<=ST_RQWAIT;
+										end if;
 									when others =>
 									end case;
 								end if;
@@ -1389,8 +1394,13 @@ DMA_ERROR_CODE<=
 										STATE<=ST_BUSWAIT;
 										reqwait<='1';
 									when "10" | "11" =>
-										busreq<='0';
-										STATE<=ST_RQWAIT;
+										if(DCR_XRM="00" and drqx='1')then
+											STATE<=ST_BUSWAIT;
+											reqwait<='1';
+										else
+											busreq<='0';
+											STATE<=ST_RQWAIT;
+										end if;
 									when others =>
 									end case;
 								end if;
@@ -1413,8 +1423,13 @@ DMA_ERROR_CODE<=
 										STATE<=ST_BUSWAIT;
 										reqwait<='1';
 									when "10" | "11" =>
-										busreq<='0';
-										STATE<=ST_RQWAIT;
+										if(DCR_XRM="00" and drqx='1')then
+											STATE<=ST_BUSWAIT;
+											reqwait<='1';
+										else
+											busreq<='0';
+											STATE<=ST_RQWAIT;
+										end if;
 									when others =>
 									end case;
 								end if;
@@ -1654,8 +1669,13 @@ DMA_ERROR_CODE<=
 								STATE<=ST_BUSWAIT;
 								reqwait<='1';
 							when "10" | "11" =>
-								busreq<='0';
-								STATE<=ST_RQWAIT;
+								if(DCR_XRM="00" and drqx='1')then
+									STATE<=ST_BUSWAIT;
+									reqwait<='1';
+								else
+									busreq<='0';
+									STATE<=ST_RQWAIT;
+								end if;
 							when others =>
 							end case;
 						end if;
@@ -1665,8 +1685,13 @@ DMA_ERROR_CODE<=
 							STATE<=ST_BUSWAIT;
 							reqwait<='1';
 						when others =>
-							busreq<='0';
-							STATE<=ST_RQWAIT;
+							if(DCR_XRM="00" and drqx='1')then
+								STATE<=ST_BUSWAIT;
+								reqwait<='1';
+							else
+								busreq<='0';
+								STATE<=ST_RQWAIT;
+							end if;
 						end case;
 					when others =>
 						STATE<=ST_IDLE;

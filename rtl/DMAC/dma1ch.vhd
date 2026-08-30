@@ -184,8 +184,6 @@ signal	drqx	:std_logic;
 signal	drqe	:std_logic;
 signal	drqeclr:std_logic;
 signal	CCR_CNT_clr:std_logic;
-signal	BAR_clr:std_logic;
-signal	BTC_clr:std_logic;
 
 
 signal	TERR_SET	:std_logic;
@@ -585,9 +583,6 @@ DMA_ERROR_CODE<=
 				if(BTC_dec='1')then
 					BTC<=BTC-x"0001";
 				end if;
-				if(BTC_clr='1')then
-					BTC<=(others=>'0');
-				end if;
 			end if;
 		end if;
 	end process;
@@ -618,9 +613,6 @@ DMA_ERROR_CODE<=
 					BAR(15 downto 0)<=b_indatl;
 				elsif(BAR_inc='1')then
 					BAR<=BAR+x"00000006";
-				end if;
-				if(BAR_clr='1')then
-					BAR<=(others=>'0');
 				end if;
 			end if;
 		end if;
@@ -801,8 +793,6 @@ DMA_ERROR_CODE<=
 				MFC_BFC		<='0';
 
 				CCR_CNT_clr<='0';
-				BAR_clr<='0';
-				BTC_clr<='0';
 				int_comp<='0';
 				S_BTCset<='0';
 				CONTMODE<='0';
@@ -839,8 +829,6 @@ DMA_ERROR_CODE<=
 				BAR_inc		<='0';
 				MFC_BFC		<='0';
 				CCR_CNT_clr<='0';
-				BAR_clr<='0';
-				BTC_clr<='0';
 --puu				
 				if(is_ch3='1') then
 				end if;
@@ -1361,14 +1349,12 @@ DMA_ERROR_CODE<=
 					when ST_NBLOCK =>
 						case OCR_CHAIN is
 						when "00" =>
-							if(CCR_CNT='1' and BAR/=x"00000000")then
+							if(CCR_CNT='1')then
 								MTC_BTC<='1';
 								MFC_BFC<='1';
 								MAR_BAR<='1';
 								S_BTCset<='1';
 								CCR_CNT_clr<='1';
-								BAR_clr<='1';
-								BTC_clr<='1';
 								STATE<=ST_BUSCONT;
 							else
 								int_comp<='1';

@@ -160,10 +160,6 @@ type state_t is(
 	ST_READ,
 	ST_CHDIR,
 	ST_WRITE,
-	ST_W8_SECOND_SETUP,
-	ST_W8_SECOND_ACK,
-	ST_W8_MEMWRITE_SETUP,
-	ST_W8_MEMWRITE_ACK,
 	ST_NEXT,
 	ST_L32_SETUP,
 	ST_L32_ACK,
@@ -731,13 +727,12 @@ DMA_ERROR_CODE<=
 		end if;
 	end process;
 
-	packen<=        '0' when DCR_DTYPE(1)='1' else
-	                '0' when OCR_SIZE/="00" else
-	                '0' when DCR_DPS='1' else
-	                '0' when MTC<x"0002" else
-	                '0' when MAR(0)='1' else
-	                '1' when SCR_MAC="01" or SCR_MAC="10" else
-	                '0';
+	packen<=	'0' when OCR_SIZE/="00" else
+				'0' when DCR_DPS='0' else
+				'0' when MTC<x"0002" else
+				'1' when DAR(0)='0' and MAR(0)='0' and SCR_DAC(1)='0' and SCR_MAC(1)='0' else
+				'1' when DAR(0)='1' and MAR(0)='1' and SCR_DAC(1)='1' and SCR_MAC(1)='1' else
+				'0';
 
 	process(clk,rstn)begin
 		if rising_edge(clk) then
@@ -977,13 +972,8 @@ DMA_ERROR_CODE<=
 									end if;
 									b_as<='0';
 									b_rwn<='1';
-									if(OCR_DIR='1' and DCR_DPS='0' and (OCR_SIZE="01" or packen='1'))then
-										b_uds<=DAR(0);
-										b_lds<=not DAR(0);
-									else
-										b_uds<='0';
-										b_lds<='0';
-									end if;
+									b_uds<='0';
+									b_lds<='0';
 									STATE<=ST_READ;
 								end if;
 							end if;
@@ -1019,151 +1009,71 @@ DMA_ERROR_CODE<=
 									else
 										TXDAT(7 downto 0)<=b_indat(7 downto 0);
 									end if;
-									if(OCR_SIZE="01" or OCR_SIZE="10" or packen='1')then
-										TXDAT(15 downto 0)<=b_indat;
-									end if;
-									STATE<=ST_CHDIR;
 								else
-									if(DCR_DPS='0' and (OCR_SIZE="01" or packen='1'))then
-										if(DAR(0)='0')then
-											TXDAT(15 downto 8)<=b_indat(15 downto 8);
-										else
-											TXDAT(15 downto 8)<=b_indat(7 downto 0);
-										end if;
-										STATE<=ST_W8_SECOND_SETUP;
+									BUSADDR<=MAR;
+									if(DAR(0)='0')then
+										TXDAT(7 downto 0)<=b_indat(15 downto 8);
 									else
-										BUSADDR<=MAR;
-										if(DAR(0)='0')then
-											TXDAT(7 downto 0)<=b_indat(15 downto 8);
-										else
-											TXDAT(7 downto 0)<=b_indat(7 downto 0);
-										end if;
-										if(OCR_SIZE="10" or packen='1')then
-											TXDAT(15 downto 0)<=b_indat;
-										end if;
-										STATE<=ST_CHDIR;
+										TXDAT(7 downto 0)<=b_indat(7 downto 0);
 									end if;
 								end if;
+								if((OCR_SIZE="01" or OCR_SIZE="10" or packen='1') and
+								   not (DCR_DPS='0' and OCR_SIZE="10"))then
+									TXDAT(15 downto 0)<=b_indat;
+								end if;
+								STATE<=ST_CHDIR;
 							end if;
 						end if;
 					when ST_CHDIR =>
-					        b_as<='0';
-					        b_rwn<='0';
-					        if(DCR_DPS='0' and (OCR_SIZE="01" or packen='1'))then
-					                b_uds<=DAR(0);
-					                b_lds<=not DAR(0);
-					                b_outdat<=TXDAT(15 downto 8) & TXDAT(15 downto 8);
-					                b_doe<='1';
-					        elsif(DCR_DPS='0' and OCR_SIZE="10")then
-					                if(OCR_DIR='0')then
-					                        b_uds<=DAR(0);
-					                        b_lds<=not DAR(0);
-					                else
-					                        b_uds<=MAR(0);
-					                        b_lds<=not MAR(0);
-					                end if;
-					                b_outdat<=TXDAT(7 downto 0) & TXDAT(7 downto 0);
-					                b_doe<='1';
-					        elsif(OCR_SIZE="01" or OCR_SIZE="10" or packen='1')then
-					                b_uds<='0';
-					                b_lds<='0';
-					                b_outdat<=TXDAT(15 downto 0);
-					                b_doe<='1';
-					        else
-					                if(OCR_DIR='0')then
-					                        b_uds<=DAR(0);
-					                        b_lds<=not DAR(0);
-					                else
-					                        b_uds<=MAR(0);
-					                        b_lds<=not MAR(0);
-					                end if;
-					                b_outdat<=TXDAT(7 downto 0) & TXDAT(7 downto 0);
-					                b_doe<='1';
-					        end if;
-					        STATE<=ST_WRITE;
-
+						b_as<='0';
+						b_rwn<='0';
+						if(DCR_DPS='0' and OCR_SIZE="10")then
+							if(OCR_DIR='0')then
+								b_uds<=DAR(0);
+								b_lds<=not DAR(0);
+							else
+								b_uds<=MAR(0);
+								b_lds<=not MAR(0);
+							end if;
+							b_outdat<=TXDAT(7 downto 0) & TXDAT(7 downto 0);
+							b_doe<='1';
+						elsif(OCR_SIZE="01" or OCR_SIZE="10" or packen='1')then
+							b_uds<='0';
+							b_lds<='0';
+							b_outdat<=TXDAT(15 downto 0);
+							b_doe<='1';
+						else
+							if(OCR_DIR='0')then
+								b_uds<=DAR(0);
+								b_lds<=not DAR(0);
+							else
+								b_uds<=MAR(0);
+								b_lds<=not MAR(0);
+							end if;
+							b_outdat<=TXDAT(7 downto 0) & TXDAT(7 downto 0);
+							b_doe<='1';
+						end if;
+						STATE<=ST_WRITE;
 					when ST_WRITE =>
-					        if(DCR_DTYPE(1)='1' and OCR_DIR='0')then
-					                b_as<='1';
-					                b_rwn<='1';
-					                b_uds<='1';
-					                b_lds<='1';
-					                b_doe<='0';
-					                d_rd<='0';
-					                d_wr<='0';
-					                STATE<=ST_NEXT;
-					        elsif(b_ack='0')then
-					                b_as<='1';
-					                b_rwn<='1';
-					                b_uds<='1';
-					                b_lds<='1';
-					                b_doe<='0';
-					                d_rd<='0';
-					                d_wr<='0';
-					                if(DCR_DTYPE(1)='0' and DCR_DPS='0' and
-					                   OCR_SIZE="01" and OCR_DIR='0')then
-					                        STATE<=ST_W8_SECOND_SETUP;
-					                else
-					                        STATE<=ST_NEXT;
-					                end if;
-					        end if;
-
-					when ST_W8_SECOND_SETUP =>
-					        BUSADDR<=BUSADDR+x"00000002";
-					        b_as<='0';
-					        if(OCR_DIR='0')then
-					                b_rwn<='0';
-					                b_uds<=DAR(0);
-					                b_lds<=not DAR(0);
-					                b_outdat<=TXDAT(7 downto 0) & TXDAT(7 downto 0);
-					                b_doe<='1';
-					        else
-					                b_rwn<='1';
-					                b_uds<=DAR(0);
-					                b_lds<=not DAR(0);
-					                b_doe<='0';
-					        end if;
-					        STATE<=ST_W8_SECOND_ACK;
-
-					when ST_W8_SECOND_ACK =>
-					        if(b_ack='0')then
-					                b_as<='1';
-					                b_rwn<='1';
-					                b_uds<='1';
-					                b_lds<='1';
-					                b_doe<='0';
-					                if(OCR_DIR='1')then
-					                        if(DAR(0)='0')then
-					                                TXDAT(7 downto 0)<=b_indat(15 downto 8);
-					                        else
-					                                TXDAT(7 downto 0)<=b_indat(7 downto 0);
-					                        end if;
-					                        STATE<=ST_W8_MEMWRITE_SETUP;
-					                else
-					                        STATE<=ST_NEXT;
-					                end if;
-					        end if;
-
-					when ST_W8_MEMWRITE_SETUP =>
-					        BUSADDR<=MAR;
-					        b_as<='0';
-					        b_rwn<='0';
-					        b_uds<='0';
-					        b_lds<='0';
-					        b_outdat<=TXDAT(15 downto 0);
-					        b_doe<='1';
-					        STATE<=ST_W8_MEMWRITE_ACK;
-
-					when ST_W8_MEMWRITE_ACK =>
-					        if(b_ack='0')then
-					                b_as<='1';
-					                b_rwn<='1';
-					                b_uds<='1';
-					                b_lds<='1';
-					                b_doe<='0';
-					                STATE<=ST_NEXT;
-					        end if;
-
+						if(DCR_DTYPE(1)='1' and OCR_DIR='0')then	--single address & MEM->DEV
+							b_as<='1';
+							b_rwn<='1';
+							b_uds<='1';
+							b_lds<='1';
+							b_doe<='0';
+							d_rd<='0';
+							d_wr<='0';
+							STATE<=ST_NEXT;
+						elsif(b_ack='0')then
+							b_as<='1';
+							b_rwn<='1';
+							b_uds<='1';
+							b_lds<='1';
+							b_doe<='0';
+							d_rd<='0';
+							d_wr<='0';
+							STATE<=ST_NEXT;
+						end if;
 					when ST_L32_SETUP =>
 						b_as<='0';
 						if(OCR_DIR='0')then
@@ -1290,9 +1200,7 @@ DMA_ERROR_CODE<=
 
 							case SCR_DAC is
 							when "01" =>
-								if(DCR_DPS='0' and (OCR_SIZE="01" or packen='1'))then
-									DAR_incl<='1';
-								elsif(DCR_DPS='0')then
+								if(DCR_DPS='0')then
 									DAR_incw<='1';
 								elsif(OCR_SIZE="01" or packen='1')then
 									DAR_incw<='1';
@@ -1302,9 +1210,7 @@ DMA_ERROR_CODE<=
 									DAR_incb<='1';
 								end if;
 							when "10" =>
-								if(DCR_DPS='0' and (OCR_SIZE="01" or packen='1'))then
-									DAR_decl<='1';
-								elsif(DCR_DPS='0')then
+								if(DCR_DPS='0')then
 									DAR_decw<='1';
 								elsif(OCR_SIZE="01" or packen='1')then
 									DAR_decw<='1';
@@ -1367,35 +1273,6 @@ DMA_ERROR_CODE<=
 						else				--8bit
 							case OCR_SIZE is
 							when "00" | "11" =>
-								if(packen='1')then
-									MTC_dec2<='1';
-								else
-									MTC_dec<='1';
-								end if;
-								if(MTC=x"0001" or
-									(packen='1' and MTC=x"0002"))then
-									if(CCR_CNT='1')then
-										S_BTCset<='1';
-										STATE<=ST_NBLOCK;
-									elsif(OCR_CHAIN(1)='1')then
-										STATE<=ST_NBLOCK;
-									else
-										busreq<='0';
-										int_comp<='1';
-										STATE<=ST_IDLE;
-									end if;
-								else
-									case OCR_REQG is
-									when "00" | "01" =>
-										STATE<=ST_BUSWAIT;
-										reqwait<='1';
-									when "10" | "11" =>
-										busreq<='0';
-										STATE<=ST_RQWAIT;
-									when others =>
-									end case;
-								end if;
-							when "01" =>
 								MTC_dec<='1';
 								if(MTC=x"0001")then
 									if(CCR_CNT='1')then
@@ -1418,6 +1295,37 @@ DMA_ERROR_CODE<=
 										STATE<=ST_RQWAIT;
 									when others =>
 									end case;
+								end if;
+							when "01" =>
+								bytecnt<=bytecnt+1;
+								if(bytecnt=1)then
+									bytecnt<=0;
+									MTC_dec<='1';
+									if(MTC=x"0001")then
+										if(CCR_CNT='1')then
+											S_BTCset<='1';
+											STATE<=ST_NBLOCK;
+										elsif(OCR_CHAIN(1)='1')then
+											STATE<=ST_NBLOCK;
+										else
+											busreq<='0';
+											int_comp<='1';
+											STATE<=ST_IDLE;
+										end if;
+									else
+										case OCR_REQG is
+										when "00" | "01" =>
+											STATE<=ST_BUSWAIT;
+											reqwait<='1';
+										when "10" | "11" =>
+											busreq<='0';
+											STATE<=ST_RQWAIT;
+										when others =>
+										end case;
+									end if;
+								else
+									STATE<=ST_BUSWAIT;
+									reqwait<='1';
 								end if;
 							when "10" =>
 								bytecnt<=bytecnt+1;

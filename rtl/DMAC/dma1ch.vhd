@@ -1583,20 +1583,14 @@ DMA_ERROR_CODE<=
 							end case;
 						end if;
 					when ST_BUSCONT =>
-						if(MAR=x"00000000")then
-							int_comp<='1';
+						case OCR_REQG is
+						when "00" | "01" =>
+							STATE<=ST_BUSWAIT;
+							reqwait<='1';
+						when others =>
 							busreq<='0';
-							STATE<=ST_IDLE;
-						else
-							case OCR_REQG is
-							when "00" | "01" =>
-								STATE<=ST_BUSWAIT;
-								reqwait<='1';
-							when others =>
-								busreq<='0';
-								STATE<=ST_RQWAIT;
-							end case;
-						end if;
+							STATE<=ST_RQWAIT;
+						end case;
 					when others =>
 						STATE<=ST_IDLE;
 					end case;

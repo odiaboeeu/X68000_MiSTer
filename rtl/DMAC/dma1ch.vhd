@@ -1660,9 +1660,6 @@ DMA_ERROR_CODE<=
 								int_comp<='1';
 								STATE<=ST_IDLE;
 							end if;
-						elsif(OCR_BTD='1' and GCR_BT/="00")then
-							busreq<='0';
-							STATE<=ST_RQWAIT;
 						else
 							case OCR_REQG is
 							when "00" | "01" =>

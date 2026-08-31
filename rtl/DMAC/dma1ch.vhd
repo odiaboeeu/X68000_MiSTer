@@ -208,6 +208,7 @@ signal START_MERR     :std_logic;
 signal START_BERR     :std_logic;
 signal START_BAERR    :std_logic;
 signal START_MAERR    :std_logic;
+signal START_DAERR    :std_logic;
 signal LOAD_MERR      :std_logic;
 signal START_CERR     :std_logic;
 signal CNT_TERR       :std_logic;
@@ -278,6 +279,11 @@ START_MAERR<='1' when START_EVT='1' and
                       (OCR_SIZE="01" or OCR_SIZE="10") and
                       MAR(0)='1' else '0';
 
+START_DAERR<='1' when START_EVT='1' and
+                      DCR_DTYPE(1)='0' and DCR_DPS='1' and
+                      (OCR_SIZE="01" or OCR_SIZE="10") and
+                      DAR(0)='1' else '0';
+
 LOAD_MERR<='1' when (MTC_load='1' and b_indatl=x"0000") or
                     (MTC_BTC='1' and BTC=x"0000") else '0';
 
@@ -302,6 +308,7 @@ CNT_CERR<='1' when CNT_EVT='1' and
 
 DMA_ERROR_EVT<=START_TERR or PROT_WRITE_EVT or CNT_TERR or
                START_MERR or START_BERR or START_BAERR or START_MAERR or
+               START_DAERR or
                LOAD_MERR or
                START_CERR or CNT_CERR;
 
@@ -313,6 +320,7 @@ DMA_ERROR_CODE<=
         "01111" when START_BERR='1' else
         "00111" when START_BAERR='1' else
         "00101" when START_MAERR='1' else
+        "00110" when START_DAERR='1' else
         "00001" when START_CERR='1' or CNT_CERR='1' else
         "00000";
 

@@ -866,6 +866,9 @@ DMA_ERROR_CODE<=
 					b_uds<='1';
 					b_lds<='1';
 					b_doe<='0';
+				elsif(CCR_HLT='1' and
+					(STATE=ST_BUSWAIT or STATE=ST_CHAINBUSWAIT))then
+					busreq<='0';
 				elsif(reqwait='1')then
 					reqwait<='0';
 				else

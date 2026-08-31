@@ -80,6 +80,7 @@ signal	S_DITset:std_logic;
 signal	S_DITres:std_logic;
 signal	S_PCTset:std_logic;
 signal	S_PCTres:std_logic;
+signal  PCLI_PREV :std_logic;
 
 signal	DCR_XRM		:std_logic_vector(1 downto 0);
 signal	DCR_DTYPE	:std_logic_vector(1 downto 0);
@@ -348,7 +349,17 @@ DMA_ERROR_CODE<=
 
 	S_NDTset <= donei;
 	S_DITset <= '0';
-	S_PCTset <= '0';
+        S_PCTset <= '1' when PCLI_PREV='1' and pcli='0' else '0';
+
+        process(clk,rstn)begin
+                if rising_edge(clk) then
+                        if(rstn='0')then
+                                PCLI_PREV<='0';
+                        elsif(ce='1')then
+                                PCLI_PREV<=pcli;
+                        end if;
+                end if;
+        end process;
 
 	COCR	:g_srff port map(S_COCset,S_COCres,S_COC,clk,ce,rstn);
 	BTCR	:g_srff port map(S_BTCset_x,S_BTCres,S_BTC,clk,ce,rstn);

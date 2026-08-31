@@ -81,6 +81,7 @@ signal	S_DITres:std_logic;
 signal	S_PCTset:std_logic;
 signal	S_PCTres:std_logic;
 signal  PCLI_PREV :std_logic;
+signal  PCL_PULSE_CNT :integer range 0 to 4;
 
 signal	DCR_XRM		:std_logic_vector(1 downto 0);
 signal	DCR_DTYPE	:std_logic_vector(1 downto 0);
@@ -345,7 +346,22 @@ DMA_ERROR_CODE<=
 	end process;
 
 	dtc <= '0';
-	pclo <= '0';
+        pclo <= '0' when DCR_PCL="10" and PCL_PULSE_CNT>0 else '1';
+
+        process(clk,rstn)begin
+                if rising_edge(clk) then
+                        if(rstn='0')then
+                                PCL_PULSE_CNT<=0;
+                        elsif(ce='1')then
+                                if(START_VALID='1' and DCR_PCL="10" and
+                                   DCR_DTYPE(0)='0')then
+                                        PCL_PULSE_CNT<=4;
+                                elsif(PCL_PULSE_CNT>0)then
+                                        PCL_PULSE_CNT<=PCL_PULSE_CNT-1;
+                                end if;
+                        end if;
+                end if;
+        end process;
 
 	S_NDTset <= donei;
 	S_DITset <= '0';

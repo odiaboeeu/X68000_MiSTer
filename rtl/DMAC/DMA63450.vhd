@@ -490,12 +490,47 @@ begin
 	end process;
 	buschkv(4)<='1' when (lm_as='0' and m_as='1') else '0';
 
-	int<=irqv(3) or irqv(2) or irqv(1) or irqv(0);
-	ivect<=	ivect0 when irqv(0)='1' else
-			ivect1 when irqv(1)='1' else
-			ivect2 when irqv(2)='1' else
-			ivect3 when irqv(3)='1' else
-			x"00";
+        int<=irqv(3) or irqv(2) or irqv(1) or irqv(0);
+
+        process(irqv,pri0,pri1,pri2,pri3,ivect0,ivect1,ivect2,ivect3)
+        variable c_pri   :std_logic_vector(3 downto 0);
+        variable n_pri   :std_logic_vector(3 downto 0);
+        variable channel :integer range 0 to 4;
+        begin
+                c_pri:="1111";
+                channel:=4;
+                for i in 0 to 3 loop
+                        case i is
+                        when 0 =>
+                                n_pri:=pri0;
+                        when 1 =>
+                                n_pri:=pri1;
+                        when 2 =>
+                                n_pri:=pri2;
+                        when 3 =>
+                                n_pri:=pri3;
+                        when others =>
+                                n_pri:="1111";
+                        end case;
+                        if(irqv(i)='1' and n_pri<=c_pri)then
+                                channel:=i;
+                                c_pri:=n_pri;
+                        end if;
+                end loop;
+
+                case channel is
+                when 0 =>
+                        ivect<=ivect0;
+                when 1 =>
+                        ivect<=ivect1;
+                when 2 =>
+                        ivect<=ivect2;
+                when 3 =>
+                        ivect<=ivect3;
+                when others =>
+                        ivect<=x"00";
+                end case;
+        end process;
 
 	b_addr<=b_addr0	when actch=0 else
 			b_addr1	when actch=1 else

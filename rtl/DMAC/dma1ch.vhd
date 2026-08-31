@@ -1349,6 +1349,10 @@ DMA_ERROR_CODE<=
 										STATE<=ST_IDLE;
 									end if;
 								else
+									if(CCR_HLT='1')then
+										busreq<='0';
+										STATE<=ST_RQWAIT;
+									else
 									case OCR_REQG is
 									when "00" | "01" =>
 										STATE<=ST_BUSWAIT;
@@ -1363,6 +1367,7 @@ DMA_ERROR_CODE<=
 										end if;
 									when others =>
 									end case;
+									end if;
 								end if;
 							when "10" =>
 								bytecnt<=bytecnt+2;
@@ -1402,6 +1407,10 @@ DMA_ERROR_CODE<=
 										STATE<=ST_IDLE;
 									end if;
 								else
+									if(CCR_HLT='1')then
+										busreq<='0';
+										STATE<=ST_RQWAIT;
+									else
 									case OCR_REQG is
 									when "00" | "01" =>
 										STATE<=ST_BUSWAIT;
@@ -1416,6 +1425,7 @@ DMA_ERROR_CODE<=
 										end if;
 									when others =>
 									end case;
+									end if;
 								end if;
 							when "01" =>
 								MTC_dec<='1';
@@ -1431,6 +1441,10 @@ DMA_ERROR_CODE<=
 										STATE<=ST_IDLE;
 									end if;
 								else
+									if(CCR_HLT='1')then
+										busreq<='0';
+										STATE<=ST_RQWAIT;
+									else
 									case OCR_REQG is
 									when "00" | "01" =>
 										STATE<=ST_BUSWAIT;
@@ -1445,6 +1459,7 @@ DMA_ERROR_CODE<=
 										end if;
 									when others =>
 									end case;
+									end if;
 								end if;
 							when "10" =>
 								bytecnt<=bytecnt+1;
@@ -1674,6 +1689,10 @@ DMA_ERROR_CODE<=
 								STATE<=ST_IDLE;
 							end if;
 						else
+							if(CCR_HLT='1')then
+								busreq<='0';
+								STATE<=ST_RQWAIT;
+							else
 							case OCR_REQG is
 							when "00" | "01" =>
 								STATE<=ST_BUSWAIT;
@@ -1688,8 +1707,13 @@ DMA_ERROR_CODE<=
 								end if;
 							when others =>
 							end case;
+							end if;
 						end if;
 					when ST_BUSCONT =>
+						if(CCR_HLT='1')then
+							busreq<='0';
+							STATE<=ST_RQWAIT;
+						else
 						case OCR_REQG is
 						when "00" | "01" =>
 							STATE<=ST_BUSWAIT;
@@ -1703,6 +1727,7 @@ DMA_ERROR_CODE<=
 								STATE<=ST_RQWAIT;
 							end if;
 						end case;
+						end if;
 					when others =>
 						STATE<=ST_IDLE;
 					end case;

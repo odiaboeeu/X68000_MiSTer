@@ -497,29 +497,8 @@ begin
 		(others=>'1');
 	
 	doe<=	'0' when rd='0' else
-			'1' when addr(23 downto 1)=VC_R00(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R01(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R02(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R03(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R04(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R05(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R06(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R07(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R08(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R09(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R10(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R11(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R12(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R13(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R14(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R15(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R16(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R17(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R18(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R19(23 downto 1) else
 			'1' when addr(23 downto 1)=VC_R20(23 downto 1) else
 			'1' when addr(23 downto 1)=VC_R21(23 downto 1) else
-			'1' when addr(23 downto 1)=VC_R22(23 downto 1) else
 			'1' when addr(23 downto 1)=VC_RCONT(23 downto 1) else
 			'1' when addr(23 downto 8)=VC_R0s(15 downto 0) else
 			'1' when addr(23 downto 8)=VC_R1s(15 downto 0) else

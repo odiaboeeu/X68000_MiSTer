@@ -520,6 +520,7 @@ begin
 			'1' when addr(23 downto 1)=VC_R20(23 downto 1) else
 			'1' when addr(23 downto 1)=VC_R21(23 downto 1) else
 			'1' when addr(23 downto 1)=VC_R22(23 downto 1) else
+			'1' when addr(23 downto 1)=VC_R23(23 downto 1) else
 			'1' when addr(23 downto 1)=VC_RCONT(23 downto 1) else
 			'1' when addr(23 downto 8)=VC_R0s(15 downto 0) else
 			'1' when addr(23 downto 8)=VC_R1s(15 downto 0) else

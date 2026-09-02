@@ -636,16 +636,6 @@ signal	gv_use_sdram : std_logic;
 signal	vr_hfreq	:std_logic;
 signal	vr_htotal	:std_logic_vector(7 downto 0);
 
---640x400 24kHz auto-detect overrides
-signal	fix_mode_active	:std_logic := '0';
-signal	eff_htotal	:std_logic_vector(7 downto 0);
-signal	eff_hsync	:std_logic_vector(7 downto 0);
-signal	eff_hvbgn	:std_logic_vector(7 downto 0);
-signal	eff_hvend	:std_logic_vector(7 downto 0);
-signal	eff_vtotal	:std_logic_vector(9 downto 0);
-signal	eff_vsync	:std_logic_vector(9 downto 0);
-signal	eff_vvbgn	:std_logic_vector(9 downto 0);
-signal	eff_vvend	:std_logic_vector(9 downto 0);
 signal	vr_hsync	:std_logic_vector(7 downto 0);
 signal	vr_hvbgn	:std_logic_vector(7 downto 0);
 signal	vr_hvend	:std_logic_vector(7 downto 0);
@@ -3094,28 +3084,6 @@ begin
 	mc_g0_caddr <= gvclr_caddr when gvclr_active='1' else g0_caddr;
 	mc_g0_clear <= '1'          when gvclr_active='1' else g0_clear;
 
-	process(sysclk) begin
-		if rising_edge(sysclk) then
-			if srstn='0' then
-				fix_mode_active <= '0';
-			elsif abus=x"E80028" and (b_wr(0)='1' or b_wr(1)='1') and sys_ce='1' then
-				if dbus=x"0415" then
-					fix_mode_active <= '1';
-				else
-					fix_mode_active <= '0';
-				end if;
-			end if;
-		end if;
-	end process;
-
-	eff_htotal <= x"73"        when fix_mode_active='1' else vr_htotal;
-	eff_hsync  <= x"0A"        when fix_mode_active='1' else vr_hsync;
-	eff_hvbgn  <= x"13"        when fix_mode_active='1' else vr_hvbgn;
-	eff_hvend  <= x"63"        when fix_mode_active='1' else vr_hvend;
-	eff_vtotal <= "0110111110" when fix_mode_active='1' else vr_vtotal;  -- 446
-	eff_vsync  <= vr_vsync;
-	eff_vvbgn  <= "0000100100" when fix_mode_active='1' else vr_vvbgn;   -- 36
-	eff_vvend  <= "0110110100" when fix_mode_active='1' else vr_vvend;   -- 436
 
 	RAM	:memcont generic map(
 		AWIDTH		=>24,
@@ -3407,14 +3375,14 @@ begin
 	
 		hrl         =>vr_DC,
 		hfreq       =>vr_hfreq,
-		htotal      =>eff_htotal,
-		hsynl       =>eff_hsync,
-		hvbgn       =>eff_hvbgn,
-		hvend       =>eff_hvend,
-		vtotal      =>eff_vtotal,
-		vsynl       =>eff_vsync,
-		vvbgn       =>eff_vvbgn,
-		vvend       =>eff_vvend,
+		htotal      =>vr_htotal,
+		hsynl       =>vr_hsync,
+		hvbgn       =>vr_hvbgn,
+		hvend       =>vr_hvend,
+		vtotal      =>vr_vtotal,
+		vsynl       =>vr_vsync,
+		vvbgn       =>vr_vvbgn,
+		vvend       =>vr_vvend,
 		rintl       =>vr_rintline,
 		hadj        =>vr_hadj,
 		

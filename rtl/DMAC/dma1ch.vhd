@@ -81,6 +81,7 @@ signal	S_DITres:std_logic;
 signal	S_PCTset:std_logic;
 signal	S_PCTres:std_logic;
 signal  PCLI_PREV :std_logic;
+signal  PCL_LOW_COUNT :integer range 0 to 2;
 signal  PCL_PULSE_CNT :integer range 0 to 4;
 
 signal	DCR_XRM		:std_logic_vector(1 downto 0);
@@ -216,6 +217,7 @@ signal START_CERR     :std_logic;
 signal CNT_TERR       :std_logic;
 signal CNT_CERR       :std_logic;
 signal DMA_ERROR_EVT  :std_logic;
+signal PCL_ABORT_EVT  :std_logic;
 signal START_VALID    :std_logic;
 signal DMA_ERROR_CODE :std_logic_vector(4 downto 0);
 
@@ -312,11 +314,17 @@ DMA_ERROR_EVT<=START_TERR or PROT_WRITE_EVT or CNT_TERR or
                START_MERR or START_BERR or START_BAERR or START_MAERR or
                START_DAERR or
                LOAD_MERR or
-               START_CERR or CNT_CERR;
+               START_CERR or CNT_CERR or PCL_ABORT_EVT;
+
+PCL_ABORT_EVT<='1' when DCR_PCL="11" and
+                         DCR_DTYPE(0)='0' and
+                         S_PCT='1' and
+                         (CCR_STR='1' or CHactive='1') else '0';
 
 START_VALID<='1' when START_EVT='1' and DMA_ERROR_EVT='0' else '0';
 
 DMA_ERROR_CODE<=
+        "10000" when PCL_ABORT_EVT='1' else
         "00010" when START_TERR='1' or PROT_WRITE_EVT='1' or CNT_TERR='1' else
         "01101" when START_MERR='1' or LOAD_MERR='1' else
         "01111" when START_BERR='1' else
@@ -365,13 +373,24 @@ DMA_ERROR_CODE<=
 
 	S_NDTset <= donei;
 	S_DITset <= '0';
-        S_PCTset <= '1' when PCLI_PREV='1' and pcli='0' else '0';
-
         process(clk,rstn)begin
                 if rising_edge(clk) then
                         if(rstn='0')then
                                 PCLI_PREV<='0';
+                                PCL_LOW_COUNT<=0;
+                                S_PCTset<='0';
                         elsif(ce='1')then
+                                S_PCTset<='0';
+
+                                if(pcli='1')then
+                                        PCL_LOW_COUNT<=0;
+                                elsif(PCLI_PREV='1')then
+                                        PCL_LOW_COUNT<=1;
+                                elsif(PCL_LOW_COUNT=1)then
+                                        PCL_LOW_COUNT<=2;
+                                        S_PCTset<='1';
+                                end if;
+
                                 PCLI_PREV<=pcli;
                         end if;
                 end if;

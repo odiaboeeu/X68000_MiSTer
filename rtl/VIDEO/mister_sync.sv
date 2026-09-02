@@ -122,9 +122,9 @@ module mister_sync
 	assign out_vvend    = vvend_ovr;
 	assign out_rintl    = rintl_ovr;
 
-	assign HSYNC = HUCOUNT < hsynl;
-	assign VSYNC = (vsynl_ovr != 0) ? (VCOUNT < vsynl_ovr) : (VCOUNT == 0);
-
+	// R01 and R05 store the respective sync pulse width minus one.
+	assign HSYNC = HUCOUNT <= hsynl;
+	assign VSYNC = VCOUNT <= vsynl_ovr;
 	wire [7:0] htotal_m = htotal_ovr;
 	wire [9:0] vtotal_m = vtotal_ovr;
 

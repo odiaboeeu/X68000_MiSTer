@@ -101,9 +101,10 @@ signal	lm_as	:std_logic;
 signal	gc_bt	:std_logic_vector(1 downto 0);
 signal	gc_br	:std_logic_vector(1 downto 0);
 signal	bwcount	:integer range 0 to (128*16)-1;
-signal	brcount	:integer range 0 to 127;
+signal	brcount	:integer range 0 to 129;
 signal	blen		:integer range 0 to 128;
 signal	bwtotal	:integer range 0 to (128*16)-1;
+signal	lrar_allow	:std_logic;
 signal	bren	:std_logic;
 
 component dma1ch
@@ -613,26 +614,45 @@ begin
 					(blen*16)-1 when gc_br="11" else
 					0;
 
-	process(clk,rstn)begin
+	-- Limited-rate auto-request bandwidth control.
+	-- The current sample interval measures non-CPU bus ownership.
+	-- Its measured utilization enables or disables limited-rate
+	-- auto-requests during the following sample interval.
+	bren<='1' when lrar_allow='1' and bwcount<blen else '0';
+
+	process(clk,rstn)
+	variable usage_next :integer range 0 to 129;
+	begin
 		if rising_edge(clk) then
 			if(rstn='0')then
 				bwcount<=0;
 				brcount<=0;
-				bren<='1';
-			elsif(ce = '1')then
-				if(actch/=4)then
-					if(brcount<(blen-1))then
-						brcount<=brcount+1;
-					else
-						bren<='0';
-					end if;
+				lrar_allow<='1';
+			elsif(ce='1')then
+				usage_next:=brcount;
+
+				-- actch/=4 represents DMAC ownership of the system bus.
+				-- Saturate above the largest programmable threshold so
+				-- that utilization greater than 128 remains detectable.
+				if(actch/=4 and usage_next<129)then
+					usage_next:=usage_next+1;
 				end if;
+
 				if(bwcount<bwtotal)then
 					bwcount<=bwcount+1;
+					brcount<=usage_next;
 				else
 					bwcount<=0;
 					brcount<=0;
-					bren<='1';
+
+					-- Utilization equal to the programmed limit is allowed.
+					-- Only utilization exceeding the limit blocks the next
+					-- complete sample interval.
+					if(usage_next<=blen)then
+						lrar_allow<='1';
+					else
+						lrar_allow<='0';
+					end if;
 				end if;
 			end if;
 		end if;

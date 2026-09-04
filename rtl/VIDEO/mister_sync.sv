@@ -92,15 +92,15 @@ module mister_sync
 
 	wire interlaced = (VMODE[0] == 1'b1 && ~hfreq);
 
-	wire hfreq_ovr = interlaced ? 1'b1 : hfreq; //1'b1;
+	wire hfreq_ovr = hfreq; //1'b1;
 	wire [1:0] HMODE_ovr = HMODE;//2'b10;
 	wire [1:0] VMODE_ovr = VMODE;
 	wire [7:0] htotal_ovr = htotal;//8'd137;
-	wire [9:0] vtotal_ovr = ~interlaced ? vtotal : {vtotal[8:0], 1'b1};
+	wire [9:0] vtotal_ovr = vtotal;
 	wire [9:0] vsynl_ovr  = vsynl;
-	wire [9:0] vvbgn_ovr  = ~interlaced ? vvbgn : {vvbgn[8:0], 1'b1};
-	wire [9:0] vvend_ovr  = ~interlaced ? vvend : {vvend[8:0], 1'b1};
-	wire [9:0] rintl_ovr  = ~interlaced ? rintl : {rintl[8:0], 1'b1};
+	wire [9:0] vvbgn_ovr  = vvbgn;
+	wire [9:0] vvend_ovr  = vvend;
+	wire [9:0] rintl_ovr  = rintl;
 
 	wire is_24khz =
 	    ((HMODE_ovr == 2'b10) && hfreq_ovr &&          (htotal_ovr >= 8'd160)) ||
@@ -266,7 +266,7 @@ module mister_sync
 
 	assign pix_ce = polyclock;
 	assign out_is_24khz = is_24khz;
-	assign f1 = 1'b0;
+	assign f1 = interlaced ? field : 1'b0;
 	assign vid_osc = pix_ce;
 
 	always_ff @(posedge gclk) begin // 80mhz is 12.5ns per tick

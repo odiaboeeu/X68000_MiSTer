@@ -526,7 +526,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				MTC<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="00101" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
@@ -552,7 +552,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				MAR<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="00110" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
@@ -597,7 +597,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				DAR<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="01010" and PROTECTED_BLOCK='0')then
 					if(regwr(1)='1')then
@@ -642,7 +642,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				BTC<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="01101")then
 					if(regwr(1)='1')then
@@ -662,7 +662,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				BAR<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="01110")then
 					if(regwr(1)='1')then
@@ -693,7 +693,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				MFC<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="10100" and regwr(0)='1' and PROTECTED_BLOCK='0')then
 					MFC<=regwdat(2 downto 0);
@@ -707,7 +707,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				DFC<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="11000" and regwr(0)='1' and PROTECTED_BLOCK='0')then
 					DFC<=regwdat(2 downto 0);
@@ -719,7 +719,7 @@ DMA_ERROR_CODE<=
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
-				BFC<=(others=>'0');
+				null;
 			elsif(ce = '1')then
 				if(regaddr(5 downto 1)="11100" and regwr(0)='1')then
 					BFC<=regwdat(2 downto 0);

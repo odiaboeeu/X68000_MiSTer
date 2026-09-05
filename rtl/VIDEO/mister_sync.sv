@@ -90,7 +90,7 @@ module mister_sync
 	logic [9:0]  div_vt_r;
 	logic        div_v60_r;
 
-	wire interlaced = (VMODE[0] == 1'b1 && ~hfreq);
+	wire interlaced = ~hfreq && (VMODE == 2'b01);
 
 	wire hfreq_ovr = hfreq; //1'b1;
 	wire [1:0] HMODE_ovr = HMODE;//2'b10;

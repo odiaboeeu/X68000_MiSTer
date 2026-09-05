@@ -132,7 +132,6 @@ port(
 	pSndPCMR		:out std_logic_vector(15 downto 0);
 	
 	rstn		:in std_logic;
-	vid_mode    :in std_logic_vector(1 downto 0) := "00";
 	dHMode      :in std_logic_vector(1 downto 0) := "11";
 	dVMode      :in std_logic := '1';
 
@@ -1878,6 +1877,7 @@ port(
 	hres	:in std_logic_vector(1 downto 0);		--00:256 01:512 10/11:768
 	vres	:in std_logic;							--0:256 1:512
 	vd1		:in std_logic;							--VD bit 1: interlace flag
+	field   :in std_logic;                                                  --Current field parity
 	sp_vres	:in std_logic;							--sprite layer vertical resolution: 0=256, 1=512
 	sp_lh	:in std_logic;							--sprite controller LH bit ($EB0811 bit4)
 	txten	:in std_logic;
@@ -3450,10 +3450,8 @@ begin
 	pVideoVS<=vidVS;
 	
 
-	pVideoHB <= vidHS    when vid_mode="10" else
-	            VID_HRTCb when vid_mode="01" else VID_HRTC;
-	pVideoVB <= vidVS    when vid_mode="10" else
-	            VID_VRTCb when vid_mode="01" else VID_VRTC;
+	pVideoHB <= VID_HRTCb;
+	pVideoVB <= VID_VRTCb;
 
 
 	process(vidclk) begin
@@ -3650,6 +3648,7 @@ begin
 		hres	=>out_HMODE,
 		vres	=>out_VMODE(0),
 		vd1		=>out_VMODE(1),
+		field   =>pVideoF1,
 		sp_vres	=>spreg_VRES(0),
 		sp_lh	=>spreg_LH,
 		txten	=>vr_TXTEN and not vr_TXTBUF,

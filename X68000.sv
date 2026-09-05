@@ -96,7 +96,6 @@ parameter CONF_STR = {
 	"P4ORS,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
 	"P4-;",
 	"P4o1,Video Frequency,60fps,Original;",
-	"P4O[70:69],Video Mode,Stretch,Native;,;",
 	"P4O45,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
 	"h1P5,MT32-pi;",
 	"h1P5-;",
@@ -675,7 +674,6 @@ always @(posedge clk_sys) begin : sxsi_boot_block
 	if (~old_boot & sxsi_boot) sxsi_boot_pulse <= 1'b1;
 end
 wire [1:0] fddwait = status[48:47];
-wire [1:0] vid_mode = status[70:69];
 
 assign CLK_VIDEO = clk_vid;
 assign AUDIO_S = 1;
@@ -862,7 +860,6 @@ X68K_top X68K_top
 	.pSNDPCMR(pcm_r),
 
 	.rstn(reset_n & ~reset),
-	.vid_mode(vid_mode),
 	.dHMode(status[45:44]),
 	.dVMode(status[46]),
 	.opm_sel(status[58]),

@@ -87,6 +87,7 @@ port(
 	hres	:in std_logic_vector(1 downto 0);		--00:256 01:512 10/11:768
 	vres	:in std_logic;							--0:256 1:512
 	vd1		:in std_logic;							--VD bit 1: interlace flag
+	field   :in std_logic;                                                  --Current field parity
 	sp_vres	:in std_logic;							--sprite layer vertical resolution: 0=256, 1=512
 	sp_lh	:in std_logic;							--sprite controller LH bit ($EB0811 bit4)
 	txten	:in std_logic;
@@ -475,8 +476,8 @@ begin
 	is_480 <= '1' when vheight = "000111100000" else '0';
 	early_vblank <= '1' when (double_scan='1' and is_480='1' and unsigned(vvbgn) < 30) else '0';
 
-	vaddrmod<= '0' & vaddr(9 downto 1)	when double_scan='1' else
-					vaddr(8 downto 0) & '1'			when vd1='1' and vres='1' and hfreq='1' else
+	vaddrmod<= '0' & vaddr(9 downto 1)      when double_scan='1' else
+					vaddr(8 downto 0) & field               when vres='1' and vd1='0' and hfreq='0' else
 					vaddr;
 	haddrmod<= haddr;
 

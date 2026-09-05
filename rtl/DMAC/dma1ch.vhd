@@ -210,6 +210,7 @@ signal START_TERR     :std_logic;
 signal START_MERR     :std_logic;
 signal START_BERR     :std_logic;
 signal START_BAERR    :std_logic;
+signal LINK_BAERR     :std_logic;
 signal START_MAERR    :std_logic;
 signal START_DAERR    :std_logic;
 signal LOAD_MERR      :std_logic;
@@ -279,6 +280,10 @@ START_BERR<='1' when START_EVT='1' and
 START_BAERR<='1' when START_EVT='1' and
                       OCR_CHAIN(1)='1' and BAR(0)='1' else '0';
 
+LINK_BAERR<='1' when STATE=ST_NBLOCK and
+                    OCR_CHAIN="11" and
+                    BAR/=x"00000000" and BAR(0)='1' else '0';
+
 START_MAERR<='1' when START_EVT='1' and
                       (OCR_SIZE="01" or OCR_SIZE="10") and
                       MAR(0)='1' else '0';
@@ -311,7 +316,7 @@ CNT_CERR<='1' when CNT_EVT='1' and
                    OCR_CHAIN(1)='1' else '0';
 
 DMA_ERROR_EVT<=START_TERR or PROT_WRITE_EVT or CNT_TERR or
-               START_MERR or START_BERR or START_BAERR or START_MAERR or
+               START_MERR or START_BERR or START_BAERR or LINK_BAERR or START_MAERR or
                START_DAERR or
                LOAD_MERR or
                START_CERR or CNT_CERR or PCL_ABORT_EVT;
@@ -328,7 +333,7 @@ DMA_ERROR_CODE<=
         "00010" when START_TERR='1' or PROT_WRITE_EVT='1' or CNT_TERR='1' else
         "01101" when START_MERR='1' or LOAD_MERR='1' else
         "01111" when START_BERR='1' else
-        "00111" when START_BAERR='1' else
+        "00111" when START_BAERR='1' or LINK_BAERR='1' else
         "00101" when START_MAERR='1' else
         "00110" when START_DAERR='1' else
         "00001" when START_CERR='1' or CNT_CERR='1' else

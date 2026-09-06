@@ -169,27 +169,37 @@ module mister_sync
 	wire [9:0] vbox_end   = vbox_start + vbox_height;
 
 	assign VIDEN = ~(VRTC || HRTC);
-	// 69.55199 - Video clock
-	// 38.86363 - Also attached to video circuits
-	//                       69.55199       38.86363   80
-	// 15KHz - 55.46Hz
-	// 256x256 = 6.25MHz                    6          12
-	// 512x256 = 10MHz                      4          8
-	// 512x512 = 19.75MHz                   2          4
-
-	// 31Khz -  61.46Hz
-	// 256x256 = 7MHz         10                       12
-	// 512x256 = 11.25MHz     6                        8
-	// 512x512 = 21.75MHz     3                        4
-	// 768x512 = 30.25MHz     2                        3
-	// HRL 0: Dividing ratio 1/2, 1/3, 1/6 
-	//     1:1/2, 1/4, 1/8
-	// If hfreq is off and 512 mode is on, the monitor is interlaced mode
-	// 50.350 crystals are also present on some models to emulate vga
-	// They are selected with a HRES of 2'b11
-	// Vertical mode if 1 when hfreq is 0, will interlace
-	// Vertical mode if 0 when hfreq is 1, will doublescan
-	// otherwise, vertical mode just draws lines.
+	// Video clock sources documented in the X68000 hardware:
+	//   38.863632 MHz
+	//   69.5519 MHz
+	//   50.350 MHz on models supporting the 768-dot clock path
+	//
+	// HF=0 selects the standard horizontal-frequency family.
+	// HF=1 selects the high horizontal-frequency family.
+	//
+	// For HF=1, the iX1096 video clock controller receives:
+	//   HRL, HF, HD1 and HD0.
+	//
+	// Documented horizontal-resolution encodings:
+	//   HD=00: 256-dot mode
+	//   HD=01: 512-dot mode
+	//   HD=10: undefined
+	//   HD=11: 768-dot mode
+	//
+	// HF=1 clock division:
+	//   HRL=0, HD=00: 69.5519 MHz / 6
+	//   HRL=0, HD=01: 69.5519 MHz / 3
+	//   HRL=0, HD=10: undefined mode, existing core clock preserved
+	//   HRL=0, HD=11: 50.350 MHz / 2
+	//
+	//   HRL=1, HD=00: 69.5519 MHz / 8
+	//   HRL=1, HD=01: 69.5519 MHz / 4
+	//   HRL=1, HD=10: undefined mode, existing core clock preserved
+	//   HRL=1, HD=11: 50.350 MHz / 2
+	//
+	// With HF=1 and VD=00, the logical 256-line image is double-scanned.
+	// With HF=1 and VD=01, the 512-line image is progressive.
+	// With HF=0 and VD=01, the documented 512-line mode is interlaced.
 	assign LRAMADR[2:0] = dotpu_cnt;
 	assign LRAMADR[9:3] = hvcount[6:0];
 
@@ -212,18 +222,18 @@ module mister_sync
 				4'h1: mod_inc = 102924; // HRL:0 HF:0 H:512
 				4'h2: mod_inc = 205848; // HRL:0 HF:0 H:768
 				4'h3: mod_inc = 158888; // HRL:0 HF:0 H:###
-				4'h4: mod_inc = 86266;  // HRL:0 HF:1 H:256 (69.552MHz/6 = 11.592MHz)
-				4'h5: mod_inc = 43133;  // HRL:0 HF:1 H:512
-				4'h6: mod_inc = 28755;  // HRL:0 HF:1 H:768
-				4'h7: mod_inc = 39722;  // HRL:0 HF:1 H:### (768 alternate)
-				4'h8: mod_inc = 205848; // HRL:1 HF:0 H:256
-				4'h9: mod_inc = 102924; // HRL:1 HF:0 H:512
-				4'hA: mod_inc = 205848; // HRL:1 HF:0 H:768
-				4'hB: mod_inc = 158888; // HRL:1 HF:0 H:###
-				4'hC: mod_inc = 115022; // HRL:1 HF:1 H:256 (69.552MHz/8 = 8.694MHz)
-				4'hD: mod_inc = 57511;  // HRL:1 HF:1 H:512
-				4'hE: mod_inc = 28755;  // HRL:1 HF:1 H:768
-				4'hF: mod_inc = 39722;  // HRL:1 HF:1 H:### (768 alternate)
+				4'h4: mod_inc = 86266;  // HRL:0 HF:1 HD:00, 256 dots, 69.5519MHz/6
+				4'h5: mod_inc = 43133;  // HRL:0 HF:1 HD:01, 512 dots, 69.5519MHz/3
+				4'h6: mod_inc = 28755;  // HRL:0 HF:1 HD:10, undefined mode
+				4'h7: mod_inc = 39722;  // HRL:0 HF:1 HD:11, 768 dots, 50.350MHz/2
+				4'h8: mod_inc = 205848; // HRL:1 HF:0 HD:00, 256 dots
+				4'h9: mod_inc = 102924; // HRL:1 HF:0 HD:01, 512 dots
+				4'hA: mod_inc = 205848; // HRL:1 HF:0 HD:10, undefined mode
+				4'hB: mod_inc = 158888; // HRL:1 HF:0 HD:11, 768-dot encoding
+				4'hC: mod_inc = 115022; // HRL:1 HF:1 HD:00, 256 dots, 69.5519MHz/8
+				4'hD: mod_inc = 57511;  // HRL:1 HF:1 HD:01, 512 dots, 69.5519MHz/4
+				4'hE: mod_inc = 28755;  // HRL:1 HF:1 HD:10, undefined mode
+				4'hF: mod_inc = 39722;  // HRL:1 HF:1 HD:11, 768 dots, 50.350MHz/2
 				default: mod_inc = 28755;
 			endcase
 		end

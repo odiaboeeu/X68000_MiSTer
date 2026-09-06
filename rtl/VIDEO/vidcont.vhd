@@ -333,7 +333,6 @@ signal	gpalin_eff	:std_logic_vector(15 downto 0);
 signal	rastnum	:std_logic_vector(9 downto 0);
 signal	hblank_d	:std_logic;
 signal	raster_prefetch_mode :std_logic;
-signal	raster_irq_early_mode :std_logic;
 signal  gpal0noi:std_logic_vector(7 downto 0);
 signal  gpal1noi:std_logic_vector(7 downto 0);
 
@@ -459,9 +458,6 @@ begin
 
 	double_scan <= '1' when vres='0' and hfreq='1' else '0';
 	raster_prefetch_mode <= '1' when double_scan='1' and hres="00" else '0';
-	raster_irq_early_mode <= '1' when raster_prefetch_mode='1' or
-	                                  (hfreq='0' and vres='0' and hres="00") else
-	                         '0';
 
 	s_crtc_val <= "10" when vres='1' and hfreq='0' else
 	              "01" when (vres='0' and hfreq='0') or (vres='1' and hfreq='1') else
@@ -990,12 +986,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 	vlineno<=vaddr;
 
 	rastnum<=raster;
-	rint<='1' when raster_irq_early_mode='1' and rintline/="0000000000" and
-	               rintline=rastnum+"0000000001" else
-	      '1' when raster_irq_early_mode='1' and rintline="0000000000" and
-	               rastnum="0000000000" else
-	      '1' when raster_irq_early_mode='0' and rintline=rastnum else
-	      '0';
+	rint<='1' when rintline=rastnum else '0';
 
 	
 	addrx<=std_logic_vector(unsigned(haddrmod(9 downto 0)) + spr_x_adj_u);

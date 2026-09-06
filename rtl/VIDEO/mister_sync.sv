@@ -91,41 +91,33 @@ module mister_sync
 
 	wire interlaced = ~hfreq && (VMODE == 2'b01);
 
-	wire hfreq_ovr = hfreq;
-	wire [1:0] HMODE_ovr = HMODE;//2'b10;
 
-	wire [7:0] htotal_ovr = htotal;//8'd137;
-	wire [9:0] vtotal_ovr = vtotal;
-	wire [9:0] vsynl_ovr  = vsynl;
-	wire [9:0] vvbgn_ovr  = vvbgn;
-	wire [9:0] vvend_ovr  = vvend;
-	wire [9:0] rintl_ovr  = rintl;
 
 	wire is_mid_hfreq =
-	    ((HMODE_ovr == 2'b10) && hfreq_ovr &&          (htotal_ovr >= 8'd160)) ||
-	    ((HMODE_ovr == 2'b01) && hfreq_ovr && ~HRL  && (htotal_ovr >= 8'd100)) ||
-	    ((HMODE_ovr == 2'b01) && hfreq_ovr &&  HRL  && (htotal_ovr >= 8'd80 )) ||
-	    ((HMODE_ovr == 2'b00) && hfreq_ovr && ~HRL  && (htotal_ovr >= 8'd53 )) ||
-	    ((HMODE_ovr == 2'b00) && hfreq_ovr &&  HRL  && (htotal_ovr >= 8'd40 ) && (htotal_ovr < 8'd50));
+	    ((HMODE == 2'b10) && hfreq &&          (htotal >= 8'd160)) ||
+	    ((HMODE == 2'b01) && hfreq && ~HRL  && (htotal >= 8'd100)) ||
+	    ((HMODE == 2'b01) && hfreq &&  HRL  && (htotal >= 8'd80 )) ||
+	    ((HMODE == 2'b00) && hfreq && ~HRL  && (htotal >= 8'd53 )) ||
+	    ((HMODE == 2'b00) && hfreq &&  HRL  && (htotal >= 8'd40 ) && (htotal < 8'd50));
 
 	assign out_HMODE    = HMODE;
 	assign out_VMODE    = VMODE;
-	assign out_hfreq    = hfreq_ovr;
+	assign out_hfreq    = hfreq;
 	assign out_htotal   = htotal;
 	assign out_hsynl    = hsynl;
 	assign out_hvbgn    = hvbgn;
 	assign out_hvend    = hvend;
-	assign out_vtotal   = vtotal_ovr;
+	assign out_vtotal   = vtotal;
 	assign out_vsynl    = vsynl;
-	assign out_vvbgn    = vvbgn_ovr;
-	assign out_vvend    = vvend_ovr;
-	assign out_rintl    = rintl_ovr;
+	assign out_vvbgn    = vvbgn;
+	assign out_vvend    = vvend;
+	assign out_rintl    = rintl;
 
 	// R01 and R05 store the respective sync pulse width minus one.
 	assign HSYNC = HUCOUNT <= hsynl;
-	assign VSYNC = VCOUNT <= vsynl_ovr;
-	wire [7:0] htotal_m = htotal_ovr;
-	wire [9:0] vtotal_m = vtotal_ovr;
+	assign VSYNC = VCOUNT <= vsynl;
+	wire [7:0] htotal_m = htotal;
+	wire [9:0] vtotal_m = vtotal;
 
 
 	wire [7:0] hactive_start = (hvbgn + 3'd4 <= htotal_m) ? hvbgn + 3'd4 : hvbgn + 3'd4 - htotal_m - 1'd1;
@@ -137,11 +129,11 @@ module mister_sync
 	wire [7:0] hactive_width = hactive_width_w[8] ? 8'hff :
 	                           (hactive_width_w == 9'd0) ? 8'd1 : hactive_width_w[7:0];
 	wire [7:0] hbox_width_nom = hfreq ?
-	                            ((HMODE_ovr == 2'b00) ? (HRL ? (is_mid_hfreq ? 8'd30 : 8'd48) : (is_mid_hfreq ? 8'd40 : 8'd32)) :
-	                             (HMODE_ovr == 2'b01) ? (HRL ? (is_mid_hfreq ? 8'd62 : 8'd48) : (is_mid_hfreq ? 8'd80 : 8'd64)) :
+	                            ((HMODE == 2'b00) ? (HRL ? (is_mid_hfreq ? 8'd30 : 8'd48) : (is_mid_hfreq ? 8'd40 : 8'd32)) :
+	                             (HMODE == 2'b01) ? (HRL ? (is_mid_hfreq ? 8'd62 : 8'd48) : (is_mid_hfreq ? 8'd80 : 8'd64)) :
 	                             8'd96) :
-	                            ((HMODE_ovr == 2'b00) ? (HRL ? 8'd48 : 8'd32) :
-	                             (HMODE_ovr == 2'b01) ? 8'd64 : 8'd96);
+	                            ((HMODE == 2'b00) ? (HRL ? 8'd48 : 8'd32) :
+	                             (HMODE == 2'b01) ? 8'd64 : 8'd96);
 	wire [7:0] hbox_width_exp = (hactive_width > hbox_width_nom) ? hactive_width : hbox_width_nom;  // expand-to-fit: never clip content
 	wire [7:0] hbox_width = (hbox_width_exp > htotal_m) ? htotal_m : hbox_width_exp;
 	wire [7:0] hbox_margin = (hbox_width > hactive_width) ? ((hbox_width - hactive_width) >> 1) : 8'd0;
@@ -152,7 +144,7 @@ module mister_sync
 	wire [7:0] hbox_start = hstart_clamped_s[7:0];
 	wire [7:0] hbox_end   = hbox_start + hbox_width;
 
-	wire [9:0] vactive_height = (vvend_ovr > vvbgn_ovr) ? (vvend_ovr - vvbgn_ovr) : 10'd1;
+	wire [9:0] vactive_height = (vvend > vvbgn) ? (vvend - vvbgn) : 10'd1;
 	wire [9:0] vbox_height_nom = is_mid_hfreq  ? 10'd424 :
 	                             hfreq     ? 10'd512 :
                                     10'd256;
@@ -160,7 +152,7 @@ module mister_sync
 	wire [9:0] vbox_height = (vbox_height_exp > vtotal_m) ? vtotal_m : vbox_height_exp;
 	wire [9:0] vbox_margin = (vbox_height > vactive_height) ? ((vbox_height - vactive_height) >> 1) : 10'd0;
 
-	wire signed [11:0] vstart_s = $signed({2'b0, vvbgn_ovr}) - $signed({2'b0, vbox_margin});
+	wire signed [11:0] vstart_s = $signed({2'b0, vvbgn}) - $signed({2'b0, vbox_margin});
 	wire signed [11:0] vmax_start_s = $signed({2'b0, vtotal_m}) - $signed({2'b0, vbox_height});
 	wire signed [11:0] vstart_clamped_s = (vstart_s < 0) ? 12'sd0 :
 	                                      (vstart_s > vmax_start_s) ? vmax_start_s : vstart_s;
@@ -216,7 +208,7 @@ module mister_sync
 		if (v60hz && (mod_inc_dyn != 32'd0))
 			mod_inc = mod_inc_dyn;
 		else begin
-			case ({HRL, hfreq_ovr, HMODE_ovr})
+			case ({HRL, hfreq, HMODE})
 				4'h0: mod_inc = 205848; // HRL:0 HF:0 H:256 (38.864MHz/8 = 4.858MHz)
 				4'h1: mod_inc = 102924; // HRL:0 HF:0 H:512
 				4'h2: mod_inc = 205848; // HRL:0 HF:0 H:768
@@ -333,9 +325,9 @@ module mister_sync
 
 				if (HUCOUNT >= htotal_m) begin
 					VCOUNT <= VCOUNT + 1'd1;
-					if (VCOUNT == vvbgn_ovr)
+					if (VCOUNT == vvbgn)
 							VRTC <= 0;
-						else if (VCOUNT == vvend_ovr)
+						else if (VCOUNT == vvend)
 							VRTC <= 1;
 						if (VCOUNT == vbox_start)
 							VRTC_b <= 0;

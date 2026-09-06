@@ -2144,6 +2144,7 @@ port(
 	sys_ce  :in std_logic := '1';
 	vclk	:in std_logic;
 	vid_ce  :in std_logic := '1';
+	hcomp	:in std_logic;
 	rstn	:in std_logic
 );
 end component;
@@ -3837,6 +3838,7 @@ begin
 		sys_ce  =>sys_ce,
 		vclk	=>vidclk,
 		vid_ce  =>vid_ce,
+		hcomp	=>HCOMP,
 		rstn	=>srstn
 	);
 	

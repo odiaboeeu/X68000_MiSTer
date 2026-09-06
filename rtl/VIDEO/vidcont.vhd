@@ -375,11 +375,8 @@ signal exon_ref   :std_logic;
 signal spr_x_adj_u  :unsigned(9 downto 0);
 signal spr_y_adj_u  :unsigned(9 downto 0);
 
-signal vheight      :std_logic_vector(9 downto 0);
 signal double_scan  :std_logic;
 signal sprite_double :std_logic;
-signal is_480       :std_logic;
-signal early_vblank :std_logic;
 signal gdot_mask : std_logic;
 signal s_crtc_val   :unsigned(1 downto 0);
 signal s_spr_val    :unsigned(1 downto 0);
@@ -454,7 +451,6 @@ begin
 	              when (unsigned(sp_hdisp) >= to_unsigned(4, 6)) else hvbgn_px_u;
 	spr_x_adj_u <= hvbgn_px_u - bg_hstart_u;
 
-	vheight <= (vvend - vvbgn) when unsigned(vvend) > unsigned(vvbgn) else (others=>'0');
 
 	double_scan <= '1' when vres='0' and hfreq='1' else '0';
 	raster_prefetch_mode <= '1' when double_scan='1' and hres="00" else '0';
@@ -469,8 +465,6 @@ begin
 	                              vres='1' and hfreq='1' and sp_vres='0' else
 	                 '0';
 
-	is_480 <= '1' when vheight = "000111100000" else '0';
-	early_vblank <= '1' when (double_scan='1' and is_480='1' and unsigned(vvbgn) < 30) else '0';
 
 	vaddrmod<= '0' & vaddr(9 downto 1)      when double_scan='1' else
 					vaddr(8 downto 0) & field               when vres='1' and vd1='0' and hfreq='0' else
@@ -913,9 +907,6 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 					raster<=raster+"0000000001";
 					hviden<='1';
 					
-					if(early_vblank='1') then
-						vaddr<=vaddr+"0000000001";
-					end if;
 					
 					if (raster = vvend-"0000000001") then
 						vviden<='0';
@@ -924,9 +915,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						vviden_int<='0';
 					end if;
 					if (vblank = '0') then
-						if(early_vblank='0') then
-							vaddr<=vaddr+"0000000001";
-						end if;
+						vaddr<=vaddr+"0000000001";
 						g0_clear<=	gclrpage(0) and gclrbusyb;
 						g1_clear<=	gclrpage(1) and gclrbusyb;
 						g2_clear<=	gclrpage(2) and gclrbusyb;

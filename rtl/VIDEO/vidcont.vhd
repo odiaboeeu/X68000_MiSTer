@@ -459,11 +459,9 @@ begin
 	              "01" when (vres='0' and hfreq='0') or (vres='1' and hfreq='1') else
 	              "00";
 	s_spr_val  <= "10" when sp_vres='1' and sp_lh='0' else
-	              "01";
-	sprite_double <= '1' when s_crtc_val > s_spr_val else
-	                 '1' when gmode="01" and hres="01" and hrl='0' and
-	                              vres='1' and hfreq='1' and sp_vres='0' else
-	                 '0';
+	              "01" when (sp_vres='0' and sp_lh='0') or (sp_vres='1' and sp_lh='1') else
+	              "00";
+	sprite_double <= '1' when s_crtc_val > s_spr_val else '0';
 
 
 	vaddrmod<= '0' & vaddr(9 downto 1)      when double_scan='1' else

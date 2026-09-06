@@ -121,10 +121,6 @@ type bg_state_t is(
 );
 signal	bg_state	:bg_state_t;
 
-signal	bg0hoff_lat	:std_logic_vector(9 downto 0);
-signal	bg0voff_lat	:std_logic_vector(9 downto 0);
-signal	bg1hoff_lat	:std_logic_vector(9 downto 0);
-signal	bg1voff_lat	:std_logic_vector(9 downto 0);
 
 component sline
 port(
@@ -154,10 +150,6 @@ begin
 				if(hcomp='1')then
 					state<=st_BG0;
 					proc_begin<='1';
-					bg0hoff_lat<=bg0hoff;
-					bg0voff_lat<=bg0voff;
-					bg1hoff_lat<=bg1hoff;
-					bg1voff_lat<=bg1voff;
 				elsif(state=st_BG0)then
 					if(bg_state=bg_END)then
 						state<=st_BG1;
@@ -182,11 +174,11 @@ begin
 	bg_asel<=	bg0asel	when state=st_BG0 else
 				bg1asel	when state=st_BG1 else
 				'1';
-	bg_xmod<=	bg0hoff_lat+('0' & bg_x)     when state=st_BG0 else
-				bg1hoff_lat+('0' & bg_x) when state=st_BG1 else
+	bg_xmod<=	bg0hoff+('0' & bg_x)     when state=st_BG0 else
+				bg1hoff+('0' & bg_x) when state=st_BG1 else
 				(others=>'0');
-	bg_ymod<=	bg0voff_lat+('0' & linenum)     when state=st_BG0 else
-				bg1voff_lat+('0' & linenum) when state=st_BG1 else
+	bg_ymod<=	bg0voff+('0' & linenum)     when state=st_BG0 else
+				bg1voff+('0' & linenum) when state=st_BG1 else
 				(others=>'0');
 	bgaddrr0<=	bg_asel & bg_ymod(8 downto 3) & bg_xmod(8 downto 3);
 	bgaddrr1<=	bg_asel & bg_ymod(9 downto 4) & bg_xmod(9 downto 4);

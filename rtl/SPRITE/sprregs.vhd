@@ -127,6 +127,10 @@ port(
 	rstn	:in std_logic
 );
 end component;
+signal bg0xpos_vid   :std_logic_vector(9 downto 0);
+signal bg0ypos_vid   :std_logic_vector(9 downto 0);
+signal bg1xpos_vid   :std_logic_vector(9 downto 0);
+signal bg1ypos_vid   :std_logic_vector(9 downto 0);
 signal bg1txsel_vid :std_logic_vector(1 downto 0);
 signal bg0txsel_vid :std_logic_vector(1 downto 0);
 signal bgon_vid     :std_logic_vector(1 downto 0);
@@ -203,6 +207,10 @@ begin
 	process(vclk, rstn)
 	begin
 		if rstn='0' then
+			bg0xpos_vid   <= (others=>'0');
+			bg0ypos_vid   <= (others=>'0');
+			bg1xpos_vid   <= (others=>'0');
+			bg1ypos_vid   <= (others=>'0');
 			bg1txsel_vid <= (others=>'0');
 			bg0txsel_vid <= (others=>'0');
 			bgon_vid     <= (others=>'0');
@@ -213,6 +221,10 @@ begin
 			hres_vid     <= (others=>'0');
 		elsif rising_edge(vclk) then
 			if vid_ce='1' and hcomp='1' then
+				bg0xpos_vid   <= reg00dat(9 downto 0);
+				bg0ypos_vid   <= reg02dat(9 downto 0);
+				bg1xpos_vid   <= reg04dat(9 downto 0);
+				bg1ypos_vid   <= reg06dat(9 downto 0);
 				bg1txsel_vid <= reg08dat(5 downto 4);
 				bg0txsel_vid <= reg08dat(2 downto 1);
 				bgon_vid     <= reg08dat(3) & reg08dat(0);
@@ -224,10 +236,10 @@ begin
 			end if;
 		end if;
 	end process;
-	BG0Xpos<=	reg00dat(9 downto 0);
-	BG0Ypos<=	reg02dat(9 downto 0);
-	BG1Xpos<=	reg04dat(9 downto 0);
-	BG1Ypos<=	reg06dat(9 downto 0);
+	BG0Xpos<=	bg0xpos_vid;
+	BG0Ypos<=	bg0ypos_vid;
+	BG1Xpos<=	bg1xpos_vid;
+	BG1Ypos<=	bg1ypos_vid;
 	DISPEN<=	reg08dat(9);
 	BG1TXSEL<=	bg1txsel_vid;
 	BG0TXSEL<=	bg0txsel_vid;

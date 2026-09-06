@@ -8,7 +8,7 @@ module mister_sync
 
 	input  [1:0]        HMODE,
 	input  [1:0]        VMODE,
-	
+
 	input               HRL,    // dock clock divider
 	input               hfreq,  // Horizontal frequency: 0 = 15khz 1 = 31khz
 	input  [7:0]        htotal, // Total Horizontal Dots divided by 8
@@ -25,7 +25,7 @@ module mister_sync
 
 	output  [1:0]       out_HMODE,
 	output  [1:0]       out_VMODE,
-	
+
 	output              out_hfreq,  // Horizontal frequency: 0 = 15khz 1 = 31khz
 	output  [7:0]       out_htotal, // Total Horizontal Dots times 8
 	output  [7:0]       out_hsynl,  // End position of hsync times 8
@@ -92,9 +92,9 @@ module mister_sync
 
 	wire interlaced = ~hfreq && (VMODE == 2'b01);
 
-	wire hfreq_ovr = hfreq; //1'b1;
+	wire hfreq_ovr = hfreq;
 	wire [1:0] HMODE_ovr = HMODE;//2'b10;
-	wire [1:0] VMODE_ovr = VMODE;
+
 	wire [7:0] htotal_ovr = htotal;//8'd137;
 	wire [9:0] vtotal_ovr = vtotal;
 	wire [9:0] vsynl_ovr  = vsynl;
@@ -156,7 +156,7 @@ module mister_sync
 	wire [9:0] vactive_height = (vvend_ovr > vvbgn_ovr) ? (vvend_ovr - vvbgn_ovr) : 10'd1;
 	wire [9:0] vbox_height_nom = is_24khz  ? 10'd424 :
 	                             hfreq     ? 10'd512 :
-	                             hfreq_ovr ? 10'd512 : 10'd256;
+                                    10'd256;
 	wire [9:0] vbox_height_exp = (vactive_height > vbox_height_nom) ? vactive_height : vbox_height_nom;
 	wire [9:0] vbox_height = (vbox_height_exp > vtotal_m) ? vtotal_m : vbox_height_exp;
 	wire [9:0] vbox_margin = (vbox_height > vactive_height) ? ((vbox_height - vactive_height) >> 1) : 10'd0;
@@ -211,7 +211,7 @@ module mister_sync
 	// Rising edge of visible area
 	assign HCOMPb = (HCOMPw && ~HCOMPl);
 	assign VCOMPb = (VCOMPw && ~VCOMPl);
-	
+
 
 	always_comb begin
 		if (v60hz && (mod_inc_dyn != 32'd0))

@@ -101,7 +101,7 @@ module mister_sync
 	wire [9:0] vvend_ovr  = vvend;
 	wire [9:0] rintl_ovr  = rintl;
 
-	wire is_24khz =
+	wire is_mid_hfreq =
 	    ((HMODE_ovr == 2'b10) && hfreq_ovr &&          (htotal_ovr >= 8'd160)) ||
 	    ((HMODE_ovr == 2'b01) && hfreq_ovr && ~HRL  && (htotal_ovr >= 8'd100)) ||
 	    ((HMODE_ovr == 2'b01) && hfreq_ovr &&  HRL  && (htotal_ovr >= 8'd80 )) ||
@@ -137,8 +137,8 @@ module mister_sync
 	wire [7:0] hactive_width = hactive_width_w[8] ? 8'hff :
 	                           (hactive_width_w == 9'd0) ? 8'd1 : hactive_width_w[7:0];
 	wire [7:0] hbox_width_nom = hfreq ?
-	                            ((HMODE_ovr == 2'b00) ? (HRL ? (is_24khz ? 8'd30 : 8'd48) : (is_24khz ? 8'd40 : 8'd32)) :
-	                             (HMODE_ovr == 2'b01) ? (HRL ? (is_24khz ? 8'd62 : 8'd48) : (is_24khz ? 8'd80 : 8'd64)) :
+	                            ((HMODE_ovr == 2'b00) ? (HRL ? (is_mid_hfreq ? 8'd30 : 8'd48) : (is_mid_hfreq ? 8'd40 : 8'd32)) :
+	                             (HMODE_ovr == 2'b01) ? (HRL ? (is_mid_hfreq ? 8'd62 : 8'd48) : (is_mid_hfreq ? 8'd80 : 8'd64)) :
 	                             8'd96) :
 	                            ((HMODE_ovr == 2'b00) ? (HRL ? 8'd48 : 8'd32) :
 	                             (HMODE_ovr == 2'b01) ? 8'd64 : 8'd96);
@@ -153,7 +153,7 @@ module mister_sync
 	wire [7:0] hbox_end   = hbox_start + hbox_width;
 
 	wire [9:0] vactive_height = (vvend_ovr > vvbgn_ovr) ? (vvend_ovr - vvbgn_ovr) : 10'd1;
-	wire [9:0] vbox_height_nom = is_24khz  ? 10'd424 :
+	wire [9:0] vbox_height_nom = is_mid_hfreq  ? 10'd424 :
 	                             hfreq     ? 10'd512 :
                                     10'd256;
 	wire [9:0] vbox_height_exp = (vactive_height > vbox_height_nom) ? vactive_height : vbox_height_nom;

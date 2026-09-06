@@ -159,7 +159,6 @@ port(
 	
 	hblank  :in std_logic;
 	vblank  :in std_logic;
-	is_24khz :in std_logic := '0';
 	
 	mix_fix :in std_logic := '0';
 

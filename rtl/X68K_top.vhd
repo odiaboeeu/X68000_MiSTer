@@ -291,7 +291,6 @@ signal	VID_HRTCb	:std_logic;
 signal	VID_VRTCb	:std_logic;
 signal	VID_RINT	:std_logic;
 signal	VID_VVIDEN	:std_logic;
-signal	vid_is_24khz	:std_logic;
 --sprite
 signal	spr_x		:std_logic_vector(9 downto 0);
 signal	spr_y		:std_logic_vector(9 downto 0);
@@ -1395,7 +1394,6 @@ port(
 	pix_ce		:out std_logic;
 	v60hz       :in std_logic;
 	f1          :out std_logic;
-	out_is_24khz :out std_logic;
 
 	gclk		:in std_logic;
 	rstn		:in std_logic
@@ -2023,8 +2021,7 @@ port(
 	
 	hblank  :in std_logic;
 	vblank  :in std_logic;
-	is_24khz :in std_logic := '0';
-	
+
 	mix_fix :in std_logic := '0';
 
 	vidclk		:in std_logic;
@@ -3525,7 +3522,6 @@ begin
 		pix_ce      =>dclk,
 		v60hz       =>vid_hz,
 		f1          =>pVideoF1,
-		out_is_24khz=>vid_is_24khz,
 		
 		gclk        =>vidclk,
 		rstn        =>vid_rstn
@@ -3834,8 +3830,7 @@ begin
 		
 		hblank  =>VID_HRTC,
 		vblank  =>VID_VRTC,
-		is_24khz=>vid_is_24khz,
-		
+
 		mix_fix =>mix_fix,
 
 		vidclk	=>vidclk,

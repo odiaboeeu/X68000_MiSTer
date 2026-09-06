@@ -54,8 +54,7 @@ module mister_sync
 	output              VCOMP,  // Signals the start of a new frame
 	output              VPSTART,
 	output              f1,
-	output              vid_osc,
-	output logic        out_is_24khz
+	output              vid_osc
 );
 	logic [9:0] VCOUNT;
 	logic [7:0] HUCOUNT;
@@ -275,7 +274,6 @@ module mister_sync
 	end
 
 	assign pix_ce = polyclock;
-	assign out_is_24khz = is_24khz;
 	assign f1 = interlaced ? field : 1'b0;
 	assign vid_osc = pix_ce;
 

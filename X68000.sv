@@ -92,6 +92,7 @@ parameter CONF_STR = {
 	"P4oQ,OPM Chip,JT51,IKAOPM;",
 	"P4O23,Stereo Mix,None,25%,50%,100%;",
 	"P4ORS,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
+	"P4O[69],Video Area,Stretched,Native;",
 	"P4-;",
 	"P4o1,Video Frequency,60fps,Original;",
 	"P4O45,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
@@ -843,6 +844,7 @@ X68K_top X68K_top
 	.opm_sel(status[58]),
 	.pMidi_en(status[67]),
 	.mix_fix(1'b1),
+       .native_video(status[69]),
 	.sxsi_inject(status[75] | sxsi_boot_pulse),
 	.vis_mem(vis_mem)
 );

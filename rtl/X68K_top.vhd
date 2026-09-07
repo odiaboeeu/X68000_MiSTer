@@ -2053,6 +2053,7 @@ port(
 	RCbusy		:in std_logic;
 	FCbusy		:in std_logic;
 	VIbusy		:in std_logic;
+	field_in		:in std_logic;
 	GR_SIZE		:out std_logic;
 	GR_CMODE	:out std_logic_vector(1 downto 0);
 	PRI_SP		:out std_logic_vector(1 downto 0);
@@ -3539,6 +3540,7 @@ begin
 		RCbusy		=>vr_rcpybusy,
 		FCbusy		=>vr_fcbusy,
 		VIbusy		=>'0',
+		field_in		=>pVideoF1,
 		GR_SIZE		=>vr_GR_SIZE,
 		GR_CMODE	=>vr_GR_CMODE,
 		PRI_SP		=>vr_PRI_SP,

@@ -53,6 +53,7 @@ port(
 	RCbusy		:in std_logic;
 	FCbusy		:in std_logic;
 	VIbusy		:in std_logic;
+	field_in		:in std_logic;
 	GR_SIZE		:out std_logic;
 	GR_CMODE	:out std_logic_vector(1 downto 0);
 	PRI_SP		:out std_logic_vector(1 downto 0);
@@ -135,8 +136,23 @@ signal	rVHT		:std_logic;
 signal	rAH			:std_logic;
 signal	rYS			:std_logic;
 signal  rDC         :std_logic;
+signal  field_meta         :std_logic;
+signal  field_sync         :std_logic;
+constant SYS_FIELD :std_logic_vector(23 downto 0) := x"e8e003";
 
 begin
+	process(clk) begin
+		if rising_edge(clk) then
+			if rstn='0' then
+				field_meta<='0';
+				field_sync<='0';
+			else
+				field_meta<=field_in;
+				field_sync<=field_meta;
+			end if;
+		end if;
+	end process;
+
 	process(clk,rstn)begin
 		if rising_edge(clk) then
 			if(rstn='0')then
@@ -492,6 +508,7 @@ begin
 		x"000" & '0' & rGR_SIZE & rGR_CMODE when addr(23 downto 8)=VC_R0s(15 downto 0) else
 		"00" & rPRI_SP & rPRI_TX & rPRI_GR & rGR_PRI when addr(23 downto 8)=VC_R1s(15 downto 0) else
 		rYS & rAH & rVHT & rEXON & rHP & rBP & rGG & rGT & '0' & rSPREN & rTXTEN & rGRPEN when addr(23 downto 8)=VC_R2s(15 downto 0) else
+		x"00" & "11111" & field_sync & "11" when addr(23 downto 1)=SYS_FIELD(23 downto 1) else
 		x"00" & "1111" & '1' & '0' & rDC & '0' when addr(23 downto 1)=SYS_DC(23 downto 1) else
 		(others=>'1') when addr(23 downto 4)=x"e8e00" and addr(3 downto 1)/="000" else
 		(others=>'1');

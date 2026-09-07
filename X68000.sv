@@ -92,7 +92,7 @@ parameter CONF_STR = {
 	"P4oQ,OPM Chip,JT51,IKAOPM;",
 	"P4O23,Stereo Mix,None,25%,50%,100%;",
 	"P4ORS,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
-	"P4O[69],Video Area,Stretched,Native;",
+	"P4O[69],Video Area,Native,Stretched;",
 	"P4-;",
 	"P4o1,Video Frequency,60fps,Original;",
 	"P4O45,Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",

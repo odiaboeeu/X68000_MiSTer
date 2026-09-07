@@ -1045,7 +1045,13 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 	addry<=std_logic_vector(unsigned('0' & vaddrmod(9 downto 1)) + unsigned('0' & std_logic_vector(spr_y_adj_u(9 downto 1)))) when (sprite_double='1') else
 
 	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u + 1) when
-	         (hres(0)='1' and hfreq='0') else
+	         (((hres="00" and vres='1' and hfreq='1' and sp_vres='0') or
+                 (hres="00" and vres='1' and hfreq='1' and
+                  sp_vres='1' and sp_lh='0') or
+                 (hres="00" and vres='1' and hfreq='1' and
+                  sp_vres='1' and sp_lh='1' and vvbgn(0)='0')) or
+	          (hres(0)='1' and vres='0' and hfreq='1' and
+	           sp_vres='0' and vvbgn(0)='1')) else
 	       std_logic_vector(unsigned(vaddr) + (spr_y_adj_u sll 1)) when (double_scan='1' and sp_vres='1') else
 	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u);
 

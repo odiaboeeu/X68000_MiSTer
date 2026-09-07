@@ -140,6 +140,7 @@ port(
 
 	-- Blend Fix: '1'=MAME formula (gpalin>>2), '0'=default (gpalin>>1)
 	mix_fix     :in std_logic := '0';
+	native_video :in std_logic := '0';
 
 	-- Disk format runtime selector: '0'=D88, '1'=XDF/DIM
 	disk_mode   :in std_logic := '0';
@@ -3448,8 +3449,8 @@ begin
 	pVideoVS<=vidVS;
 	
 
-	pVideoHB <= VID_HRTCb;
-	pVideoVB <= VID_VRTCb;
+	pVideoHB <= VID_HRTC when native_video='1' else VID_HRTCb;
+	pVideoVB <= VID_VRTC when native_video='1' else VID_VRTCb;
 
 
 	process(vidclk) begin

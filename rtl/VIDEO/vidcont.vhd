@@ -486,7 +486,6 @@ begin
 
 	vvbgn_mod_u <= (resize(unsigned(vvbgn), 10) srl 1) when double_scan='1' else resize(unsigned(vvbgn), 10);
 	bg_vstart_u  <= (resize(unsigned(sp_vdisp), 10) srl 1) when double_scan='1' else
-	                (resize(unsigned(sp_vdisp), 10) sll 1) when vres='1' and hfreq='0' else
 	                resize(unsigned(sp_vdisp), 10);
 	spr_y_adj_u  <= vvbgn_mod_u - bg_vstart_u;
 

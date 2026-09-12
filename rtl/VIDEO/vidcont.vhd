@@ -336,6 +336,7 @@ signal	gclrbgnrq	:std_logic;
 signal	gclrendrq	:std_logic;
 signal	gclrbusyb	:std_logic;
 signal	gclr_interlace_second	:std_logic;
+signal	gclrsel	:std_logic_vector(3 downto 0);
 
 signal	mixg,mixr,mixb	:std_logic_vector(5 downto 0);
 signal	mixg_fix,mixr_fix,mixb_fix :std_logic_vector(4 downto 0);
@@ -613,6 +614,9 @@ begin
 							'0' & (g0_hoffset_lat(8 downto 0)+haddrmod(8 downto 0));
 	g0vaddr_offset<=	g0_voffset_lat+vaddrmod when memres='1' else
 							'0' & (g0_voffset_lat(8 downto 0)+vaddrmod(8 downto 0));
+	gclrsel<=gclrpage when memres='0' else
+			   "0011" when g0vaddr_offset(9)='0' else
+			   "1100";
 	g1haddr_offset<='0' & (g1_hoffset_lat+haddrmod(8 downto 0));
 	g1vaddr_offset<='0' & (g1_voffset_lat+vaddrmod(8 downto 0));
 	g2haddr_offset<='0' & (g2_hoffset_lat+haddrmod(8 downto 0));
@@ -937,15 +941,15 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						gclrrast<=raster;
 						gclr_interlace_second<='0';
 					end if;
-					g0_clear<=	gclrpage(0) and (gclrbusyb or gclrbgnrq);
-					g1_clear<=	gclrpage(1) and (gclrbusyb or gclrbgnrq);
-					g2_clear<=	gclrpage(2) and (gclrbusyb or gclrbgnrq);
-					g3_clear<=	gclrpage(3) and (gclrbusyb or gclrbgnrq);
+					g0_clear<=	gclrsel(0) and (gclrbusyb or gclrbgnrq);
+					g1_clear<=	gclrsel(1) and (gclrbusyb or gclrbgnrq);
+					g2_clear<=	gclrsel(2) and (gclrbusyb or gclrbgnrq);
+					g3_clear<=	gclrsel(3) and (gclrbusyb or gclrbgnrq);
 					nxt_trd<=	ten;
-					nxt_g0rd<=	g0en and (not (gclrpage(0) and (gclrbusyb or gclrbgnrq)));
-					nxt_g1rd<=	g1en and (not (gclrpage(1) and (gclrbusyb or gclrbgnrq)));
-					nxt_g2rd<=	g2en and (not (gclrpage(2) and (gclrbusyb or gclrbgnrq)));
-					nxt_g3rd<=	g3en and (not (gclrpage(3) and (gclrbusyb or gclrbgnrq)));
+					nxt_g0rd<=	g0en and (not (gclrsel(0) and (gclrbusyb or gclrbgnrq)));
+					nxt_g1rd<=	g1en and (not (gclrsel(1) and (gclrbusyb or gclrbgnrq)));
+					nxt_g2rd<=	g2en and (not (gclrsel(2) and (gclrbusyb or gclrbgnrq)));
+					nxt_g3rd<=	g3en and (not (gclrsel(3) and (gclrbusyb or gclrbgnrq)));
 					cur_trd<=	'0';
 					cur_g0rd<=	'0';
 					cur_g1rd<=	'0';
@@ -990,21 +994,21 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 					end if;
                                         if (vblank = '0') then
                                                 vaddr<=vaddr+"0000000001";
-						g0_clear<=	gclrpage(0) and gclrbusyb;
-						g1_clear<=	gclrpage(1) and gclrbusyb;
-						g2_clear<=	gclrpage(2) and gclrbusyb;
-						g3_clear<=	gclrpage(3) and gclrbusyb;
+						g0_clear<=	gclrsel(0) and gclrbusyb;
+						g1_clear<=	gclrsel(1) and gclrbusyb;
+						g2_clear<=	gclrsel(2) and gclrbusyb;
+						g3_clear<=	gclrsel(3) and gclrbusyb;
 						nxt_trd<=	ten;
-						nxt_g0rd<=	g0en and (not (gclrpage(0) and gclrbusyb));
-						nxt_g1rd<=	g1en and (not (gclrpage(1) and gclrbusyb));
-						nxt_g2rd<=	g2en and (not (gclrpage(2) and gclrbusyb));
-						nxt_g3rd<=	g3en and (not (gclrpage(3) and gclrbusyb));
+						nxt_g0rd<=	g0en and (not (gclrsel(0) and gclrbusyb));
+						nxt_g1rd<=	g1en and (not (gclrsel(1) and gclrbusyb));
+						nxt_g2rd<=	g2en and (not (gclrsel(2) and gclrbusyb));
+						nxt_g3rd<=	g3en and (not (gclrsel(3) and gclrbusyb));
 				    elsif (vaddr = "0000000000") then
 						nxt_trd<=	ten;
-						nxt_g0rd<=	g0en and (not (gclrpage(0) and gclrbusyb));
-						nxt_g1rd<=	g1en and (not (gclrpage(1) and gclrbusyb));
-						nxt_g2rd<=	g2en and (not (gclrpage(2) and gclrbusyb));
-						nxt_g3rd<=	g3en and (not (gclrpage(3) and gclrbusyb));
+						nxt_g0rd<=	g0en and (not (gclrsel(0) and gclrbusyb));
+						nxt_g1rd<=	g1en and (not (gclrsel(1) and gclrbusyb));
+						nxt_g2rd<=	g2en and (not (gclrsel(2) and gclrbusyb));
+						nxt_g3rd<=	g3en and (not (gclrsel(3) and gclrbusyb));
 					else
 						g0_clear<=	'0';
 						g1_clear<=	'0';
@@ -1230,9 +1234,9 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 	t1_addr<=	nxt_taddr	when ramsel='1' else
 					cur_taddr;
 	g0_caddr<=	g_base(arange-1 downto 18) & nxt_g0addr(17 downto 8);
-	g1_caddr<=	g_base(arange-1 downto 18) & nxt_g1addr(17 downto 8);
-	g2_caddr<=	g_base(arange-1 downto 18) & nxt_g2addr(17 downto 8);
-	g3_caddr<=	g_base(arange-1 downto 18) & nxt_g3addr(17 downto 8);
+	g1_caddr<=	g_base(arange-1 downto 18) & nxt_g0addr(17 downto 8) when memres='1' else g_base(arange-1 downto 18) & nxt_g1addr(17 downto 8);
+	g2_caddr<=	g_base(arange-1 downto 18) & nxt_g0addr(17 downto 8) when memres='1' else g_base(arange-1 downto 18) & nxt_g2addr(17 downto 8);
+	g3_caddr<=	g_base(arange-1 downto 18) & nxt_g0addr(17 downto 8) when memres='1' else g_base(arange-1 downto 18) & nxt_g3addr(17 downto 8);
 	g0_rdat<=	(others=>'0') when cur_g0rd='0' else
 					g10_rdat	when ramsel='0' else
 					g00_rdat;

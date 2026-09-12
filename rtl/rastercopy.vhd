@@ -51,6 +51,9 @@ begin
 	begin
 		if rising_edge(clk) then
 			if(rstn='0')then
+				STATE<=st_IDLE;
+				sel<=(others=>'0');
+				ackd<='0';
 				cplane<=(others=>'0');
 				srcaddr(selwidth+7 downto selwidth)<=(others=>'0');
 				dstaddr(selwidth+7 downto selwidth)<=(others=>'0');

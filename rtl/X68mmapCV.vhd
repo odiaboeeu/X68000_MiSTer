@@ -255,7 +255,7 @@ begin
 			'0';
 	
 	ram_rmwmask<=
-		not txtmask	when atype=addr_TRAM and MEN='1' else
+		txtmask		when atype=addr_TRAM and MEN='1' else
 		x"000f" when gpconven='1' and vmode="00" and (gpstate=gp_p0 or gpstate=gp_p0w) else
 		x"00f0" when gpconven='1' and vmode="00" and (gpstate=gp_p1 or gpstate=gp_p1w) else
 		x"0f00" when gpconven='1' and vmode="00" and (gpstate=gp_p2 or gpstate=gp_p2w) else

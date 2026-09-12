@@ -335,6 +335,7 @@ signal	gclrrast	:std_logic_vector(9 downto 0);
 signal	gclrbgnrq	:std_logic;
 signal	gclrendrq	:std_logic;
 signal	gclrbusyb	:std_logic;
+signal	gclr_interlace_second	:std_logic;
 
 signal	mixg,mixr,mixb	:std_logic_vector(5 downto 0);
 signal	mixg_fix,mixr_fix,mixb_fix :std_logic_vector(4 downto 0);
@@ -899,6 +900,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 				gclrrast<=(others=>'1');
 				gclrbgnrq<='0';
 				gclrendrq<='0';
+				gclr_interlace_second<='0';
 			elsif (vid_ce = '1') then
 				lbwr<='0';
 				if(gclrbgn='1' and gclrbusyb='0')then
@@ -907,12 +909,21 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 					gclrendrq<='1';
 				end if;
 				if(hcomp='1')then
-					if(gclrbusyb='1' and (gclrendrq='1' or gclrrast=raster))then
+					if(gclrbusyb='1' and gclrendrq='1')then
 						gclrendrq<='0';
 						gclrbusyb<='0';
+						gclr_interlace_second<='0';
+					elsif(gclrbusyb='1' and gclrrast=raster)then
+						if(hfreq='0' and vd1='1' and gclr_interlace_second='0')then
+							gclr_interlace_second<='1';
+						else
+							gclrbusyb<='0';
+							gclr_interlace_second<='0';
+						end if;
 					elsif(gclrbusyb='0' and gclrendrq='1')then
 						gclrendrq<='0';
 						gclrbgnrq<='0';
+						gclr_interlace_second<='0';
 					end if;
 				end if;
 				if(vpstart='1')then
@@ -924,6 +935,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						gclrbusyb<='1';
 						gclrbgnrq<='0';
 						gclrrast<=raster;
+						gclr_interlace_second<='0';
 					end if;
 					g0_clear<=	gclrpage(0) and (gclrbusyb or gclrbgnrq);
 					g1_clear<=	gclrpage(1) and (gclrbusyb or gclrbgnrq);

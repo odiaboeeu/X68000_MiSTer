@@ -67,7 +67,7 @@ begin
 				case STATE is
 				when st_IDLE=>
 	--				if(sstart='0' and lstart='1')then
-					if(start='1')then
+					if(start='1' and plane/="0000")then
 						srcaddr(selwidth+7 downto selwidth)<=src;
 						dstaddr(selwidth+7 downto selwidth)<=dst;
 						cplane<=plane;

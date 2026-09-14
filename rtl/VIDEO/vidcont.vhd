@@ -388,6 +388,7 @@ signal gfirst_nonzero_d,gsecond_nonzero_d :std_logic;
 signal gfirst_trigger_d,gr_selected_rank2_d :std_logic;
 signal grskel     :std_logic;
 signal exon_ref   :std_logic;
+signal gt_ref     :std_logic;
 
 signal spr_x_adj_u  :unsigned(9 downto 0);
 signal spr_y_adj_u  :unsigned(9 downto 0);
@@ -820,7 +821,8 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 
 	grskel <= '1' when exon='1' and hp='1' and bp='1' and gg='1' and
 						 gt='0' and ah='0' else '0';
-	exon_ref <= exon and not grskel;
+	exon_ref <= exon and (not grskel or vht);
+	gt_ref <= gt or (vht and grskel);
 	
 	gpal0noi<=	
 				x"0" & g4p1_ddat when gmode="00" and grskel='1' and g4p1_ddat(0)='1' and graphen(0)='1' else
@@ -1187,7 +1189,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 			hp => hp,
 			plsb => bp,
 			gg => gg,
-			gt => gt,
+			gt => gt_ref,
 			ah => ah,
 			sp_pal => sprite_ind,
 			tx_pal => t_ddatd,

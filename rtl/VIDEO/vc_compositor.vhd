@@ -230,7 +230,7 @@ begin
         result_source := normal_source;
         result_valid  := normal_valid;
 
-        if ah = '1' and gr_present then
+        if ah = '1' and plsb = '1' and gr_present then
             result_color  := mix_x(gr_color, tx_color0);
             result_source := SRC_GR;
             result_valid  := '1';

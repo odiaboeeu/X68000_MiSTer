@@ -434,8 +434,7 @@ begin
 
 	gfirst_nonzero_raw <= '1' when gfirst_raw/=x"0000" else '0';
 	gsecond_nonzero_raw <= '1' when gsecond_raw/=x"0000" else '0';
-	gfirst_trigger_raw <= '1' when unsigned(gfirst_raw)>to_unsigned(1,16) and
-	                               gfirst_raw(0)='1' else '0';
+	gfirst_trigger_raw <= '1' when gfirst_raw(0)='1' else '0';
 	gr_selected_rank2_raw <= '1' when gfirst_raw=x"0000" and
 	                                   gsecond_raw/=x"0000" else '0';
 

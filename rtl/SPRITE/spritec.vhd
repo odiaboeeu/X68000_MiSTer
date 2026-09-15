@@ -366,9 +366,9 @@ begin
 				'0' when sp_wr='0' else
 				'1' when sprPRI/="00" else
 				'0';
-	sp1_wr<=sp_any_wr;
-	sp2_wr<=sp_any_wr;
-	sp3_wr<=sp_any_wr;
+	sp1_wr<=sp_any_wr when sprPRI="01" else '0';
+	sp2_wr<=sp_any_wr when sprPRI="10" else '0';
+	sp3_wr<=sp_any_wr when sprPRI="11" else '0';
 	sp1_wrdat<=sprCOLORd & dotin when sprPRI="01" else x"00";
 	sp2_wrdat<=sprCOLORd & dotin when sprPRI="10" else x"00";
 	sp3_wrdat<=sprCOLORd & dotin when sprPRI="11" else x"00";

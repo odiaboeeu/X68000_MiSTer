@@ -348,6 +348,9 @@ signal	gmixdat	:std_logic_vector(15 downto 0);
 signal	gpalin_eff	:std_logic_vector(15 downto 0);
 
 signal	rastnum	:std_logic_vector(9 downto 0);
+signal rint_reg :std_logic := '0';
+signal rintline_prev :std_logic_vector(9 downto 0) := (others=>'0');
+signal rint_hblank_lead :std_logic_vector(10 downto 0);
 signal      hblank_d :std_logic := '1';
 signal      raster_offset_early_mode :std_logic;
 signal  gpal0noi:std_logic_vector(7 downto 0);
@@ -471,6 +474,9 @@ begin
 
 	double_scan <= '1' when vres='0' and hfreq='1' else '0';
     raster_offset_early_mode <= '1' when double_scan='1' and hres="00" else '0';
+    rint_hblank_lead <= ((hvend-hvbgn) & "111") - "00000001000"
+        when unsigned(hvend) > unsigned(hvbgn) else
+        (others=>'0');
 
 	s_crtc_val <= "10" when vres='1' and hfreq='0' else
 	              "01" when (vres='0' and hfreq='0') or (vres='1' and hfreq='1') else
@@ -878,6 +884,8 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 				haddr<=(others=>'0');
 				vaddr<=(others=>'0');
 				raster<=(others=>'0');
+				rint_reg<='0';
+				rintline_prev<=(others=>'0');
 				lbwr<='0';
 				nxt_trd<='0';
 				nxt_g0rd<='0';
@@ -935,6 +943,12 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 					haddr<=(others=>'0');
 					vaddr<=(others=>'0');
 					raster<=(others=>'0');
+					rintline_prev<=rintline;
+					if rintline="0000000000" then
+						rint_reg<='1';
+					else
+						rint_reg<='0';
+					end if;
 					--h3count<=0;
 					if(gclrbgnrq='1')then
 						gclrbusyb<='1';
@@ -984,6 +998,11 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 					haddr<=(others=>'0');
 					lvviden<=vviden;
 					raster<=raster+"0000000001";
+					if rintline=raster+"0000000001" then
+						rint_reg<='1';
+					else
+						rint_reg<='0';
+					end if;
 					hviden<='1';
 					
 					
@@ -1046,6 +1065,19 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						cur_g2rd<=	'0';
 						cur_g3rd<=	'0';
 					end if;
+					if rintline/=rintline_prev then
+						rintline_prev<=rintline;
+						if rintline=raster then
+							rint_reg<='1';
+						else
+							rint_reg<='0';
+						end if;
+					elsif rintline/="0000000000" and
+						rintline=raster+"0000000001" and
+						('0' & haddr)=rint_hblank_lead then
+						-- Assert raster IRQ eight haddr cycles before hvwidth.
+						rint_reg<='1';
+					end if;
 				end if;
 			end if;
 		end if;
@@ -1054,7 +1086,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 	vlineno<=vaddr;
 
 	rastnum<=raster;
-	rint<='1' when rintline=rastnum else '0';
+	rint<=rint_reg;
 
 	
 	addrx<=std_logic_vector(unsigned(haddrmod(9 downto 0)) + spr_x_adj_u);
@@ -1068,6 +1100,9 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
                   sp_vres='1' and sp_lh='1' and vvbgn(0)='0')) or
 	          (hres(0)='1' and vres='0' and hfreq='1' and
 	           sp_vres='0' and vvbgn(0)='1')) else
+	       -- Advance the sprite line in applicable 15 kHz modes.
+	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u + 1) when
+	         (hres(0)='1' and hfreq='0') else
 	       std_logic_vector(unsigned(vaddr) + (spr_y_adj_u sll 1)) when (double_scan='1' and sp_vres='1') else
 	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u);
 

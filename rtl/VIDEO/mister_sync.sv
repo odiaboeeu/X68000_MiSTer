@@ -115,9 +115,27 @@ module mister_sync
 
 	// R01 and R05 store the respective sync pulse width minus one.
 	assign HSYNC = HUCOUNT <= hsynl;
-	assign VSYNC = VCOUNT <= vsynl;
 	wire [7:0] htotal_m = htotal;
 	wire [9:0] vtotal_m = vtotal;
+
+	// In documented HF=0/VD=01 interlace, one field keeps the normal
+	// line-aligned vertical sync phase while the other is displaced by
+	// half of the complete horizontal period. Keep the internal CRTC
+	// raster, HCOMP, VCOMP and VRAM timing on full-line boundaries.
+	wire [11:0] hphase =
+		({4'd0, HUCOUNT} << 3) + {9'd0, dotpu_cnt};
+	wire [11:0] hperiod =
+		({3'd0, htotal_m} + 12'd1) << 3;
+	wire [11:0] hhalf = hperiod >> 1;
+	wire        second_half = hphase >= hhalf;
+
+	wire vsync_field0 = VCOUNT <= vsynl;
+	wire vsync_field1 =
+		((VCOUNT == 10'd0) && second_half) ||
+		((VCOUNT > 10'd0) && (VCOUNT <= vsynl)) ||
+		((VCOUNT == ({1'b0, vsynl} + 11'd1)) && !second_half);
+
+	assign VSYNC = (interlaced && field) ? vsync_field1 : vsync_field0;
 
 
 	wire [7:0] hactive_start = (hvbgn + 3'd4 <= htotal_m) ? hvbgn + 3'd4 : hvbgn + 3'd4 - htotal_m - 1'd1;

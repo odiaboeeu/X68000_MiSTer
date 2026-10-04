@@ -89,7 +89,19 @@ module mister_sync
 	logic [9:0]  div_vt_r;
 	logic        div_v60_r;
 
-	wire interlaced = ~hfreq && (VMODE == 2'b01);
+	// Documented 15 kHz interlace mode.
+	wire standard_interlaced =
+		~hfreq && (VMODE == 2'b01);
+
+	// Undocumented HF=1/VD=11 mode used by Dragon Buster.
+	// XEiJ identifies this combination as 768x1024 interlace.
+	// Export field parity for scaler classification, while preserving
+	// the documented half-line VSYNC behavior separately below.
+	wire super_interlaced =
+		hfreq && (VMODE == 2'b11);
+
+	wire interlaced =
+		standard_interlaced || super_interlaced;
 
 
 
@@ -135,7 +147,11 @@ module mister_sync
 		((VCOUNT > 10'd0) && (VCOUNT <= vsynl)) ||
 		((VCOUNT == ({1'b0, vsynl} + 11'd1)) && !second_half);
 
-	assign VSYNC = (interlaced && field) ? vsync_field1 : vsync_field0;
+	// Apply the documented half-line phase only to HF=0/VD=01.
+	// The undocumented HF=1/VD=11 mode initially exports FIELD only,
+	// allowing scaler detection without altering its VSYNC phase.
+	assign VSYNC =
+		(standard_interlaced && field) ? vsync_field1 : vsync_field0;
 
 
 	wire [7:0] hactive_start = (hvbgn + 3'd4 <= htotal_m) ? hvbgn + 3'd4 : hvbgn + 3'd4 - htotal_m - 1'd1;

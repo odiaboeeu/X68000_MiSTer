@@ -488,7 +488,8 @@ begin
 
 
 	vaddrmod<= '0' & vaddr(9 downto 1)      when double_scan='1' else
-					vaddr(8 downto 0) & field               when vres='1' and vd1='0' and hfreq='0' else
+					vaddr(8 downto 0) & field               when (vres='1' and vd1='0' and hfreq='0') or
+                                             (vres='1' and vd1='1' and hfreq='1') else
 					vaddr;
 	haddrmod<= haddr;
 
@@ -1072,7 +1073,8 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						else
 							rint_reg<='0';
 						end if;
-					elsif rintline/="0000000000" and
+					elsif hfreq='0' and
+						rintline/="0000000000" and
 						rintline=raster+"0000000001" and
 						('0' & haddr)=rint_hblank_lead then
 						-- Assert raster IRQ eight haddr cycles before hvwidth.

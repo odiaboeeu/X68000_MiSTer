@@ -667,6 +667,7 @@ signal	gr2_offsety	:std_logic_vector(8 downto 0);
 signal	gr3_offsetx	:std_logic_vector(8 downto 0);
 signal	gr3_offsety	:std_logic_vector(8 downto 0);
 signal	vr_rintline	:std_logic_vector(9 downto 0);
+signal vr_r09_wr_toggle	:std_logic;
 signal	vr_MEN		:std_logic;
 signal	vr_SA		:std_logic;
 signal	vr_AP		:std_logic_vector(3 downto 0);
@@ -2011,6 +2012,7 @@ port(
 	
 	vvideoen	:out std_logic;
 	rintline:in std_logic_vector(9 downto 0);
+	r09_wr_toggle	:in std_logic := '0';
 	rint	:out std_logic;
 
 	vlineno	:out std_logic_vector(9 downto 0);
@@ -2097,6 +2099,7 @@ port(
 	vvend		:out std_logic_vector(9 downto 0);
 	hadj		:out std_logic_vector(7 downto 0);
 	intraster	:out std_logic_vector(9 downto 0);
+	intraster_wr	:out std_logic;
 	txtoffsetx	:out std_logic_vector(9 downto 0);
 	txtoffsety	:out std_logic_vector(9 downto 0);
 	g0offsetx	:out std_logic_vector(9 downto 0);
@@ -3622,6 +3625,7 @@ begin
 		vvend		=>vr_vvend,
 		hadj		=>vr_hadj,
 		intraster	=>vr_rintline,
+		intraster_wr	=>vr_r09_wr_toggle,
 		txtoffsetx	=>txt_offsetx,
 		txtoffsety	=>txt_offsety,
 		g0offsetx	=>gr0_offsetx,
@@ -3823,6 +3827,7 @@ begin
 	
 		vvideoen	=>VID_VVIDEN,
 		rintline=>out_rintl,
+		r09_wr_toggle	=>vr_r09_wr_toggle,
 		rint	=>VID_RINT,
 		
 --		vlineno	=>vlineno,

@@ -22,6 +22,7 @@ port(
 	vvend		:out std_logic_vector(9 downto 0);
 	hadj		:out std_logic_vector(7 downto 0);
 	intraster	:out std_logic_vector(9 downto 0);
+	intraster_wr	:out std_logic;
 	txtoffsetx	:out std_logic_vector(9 downto 0);
 	txtoffsety	:out std_logic_vector(9 downto 0);
 	g0offsetx	:out std_logic_vector(9 downto 0);
@@ -92,6 +93,7 @@ signal	rvvbgn		:std_logic_vector(9 downto 0);
 signal	rvvend		:std_logic_vector(9 downto 0);
 signal	rhadj		:std_logic_vector(7 downto 0);
 signal	rintraster	:std_logic_vector(9 downto 0);
+signal r09_wr_toggle	:std_logic := '0';
 signal	rtxtoffsetx	:std_logic_vector(9 downto 0);
 signal	rtxtoffsety	:std_logic_vector(9 downto 0);
 signal	rg0offsetx	:std_logic_vector(9 downto 0);
@@ -166,6 +168,7 @@ begin
 				rvvend		<=(others=>'0');
 				rhadj		<=(others=>'0');
 				rintraster	<=(others=>'0');
+				r09_wr_toggle	<='0';
 				rtxtoffsetx	<=(others=>'0');
 				rtxtoffsety	<=(others=>'0');
 				rg0offsetx	<=(others=>'0');
@@ -271,6 +274,9 @@ begin
 					if(wr(0)='1')then
 						rintraster(7 downto 0)<=wdat(7 downto 0);
 					end if;
+				if(wr(1)='1' or wr(0)='1')then
+					r09_wr_toggle <= not r09_wr_toggle;
+				end if;
 				when VC_R10(23 downto 1) =>
 					if(wr(1)='1')then
 						rtxtoffsetx(9 downto 8)<=wdat(9 downto 8);
@@ -436,6 +442,7 @@ begin
 	vvend		<=rvvend;
 	hadj		<=rhadj;
 	intraster	<=rintraster;
+	intraster_wr	<=r09_wr_toggle;
 	txtoffsetx	<=rtxtoffsetx;
 	txtoffsety	<=rtxtoffsety;
 	g0offsetx	<=rg0offsetx;

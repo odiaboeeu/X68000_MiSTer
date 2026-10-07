@@ -148,6 +148,7 @@ port(
 	
 	vvideoen	:out std_logic;
 	rintline:in std_logic_vector(9 downto 0);
+	r09_wr_toggle	:in std_logic := '0';
 	rint	:out std_logic;
 
 	vlineno	:out std_logic_vector(9 downto 0);
@@ -351,6 +352,10 @@ signal	rastnum	:std_logic_vector(9 downto 0);
 signal rint_reg :std_logic := '0';
 signal rintline_prev :std_logic_vector(9 downto 0) := (others=>'0');
 signal rint_hblank_lead :std_logic_vector(10 downto 0);
+signal r09_wr_toggle_meta :std_logic := '0';
+signal r09_wr_toggle_sync :std_logic := '0';
+signal r09_wr_toggle_prev :std_logic := '0';
+signal r09_wr_event       :std_logic;
 signal      hblank_d :std_logic := '1';
 signal      raster_offset_early_mode :std_logic;
 signal  gpal0noi:std_logic_vector(7 downto 0);
@@ -877,6 +882,24 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 				g8p1_ddat(0) and graphen(0) and grpen_gate when gmode="01" else
 				g16_ddat(0) and grpen_gate;
 
+	-- Two-stage CDC synchronizer: R09 write toggle (sysclk -> vidclk)
+	process(vidclk) begin
+		if rising_edge(vidclk) then
+			if rstn='0' then
+				r09_wr_toggle_meta <= '0';
+				r09_wr_toggle_sync <= '0';
+				r09_wr_toggle_prev <= '0';
+			else
+				r09_wr_toggle_meta <= r09_wr_toggle;
+				r09_wr_toggle_sync <= r09_wr_toggle_meta;
+				if vid_ce='1' then
+					r09_wr_toggle_prev <= r09_wr_toggle_sync;
+				end if;
+			end if;
+		end if;
+	end process;
+	r09_wr_event <= '1' when r09_wr_toggle_sync /= r09_wr_toggle_prev else '0';
+
 	process(vidclk)
 	variable hvwidth	:std_logic_vector(10 downto 0);
 	begin
@@ -1066,7 +1089,15 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						cur_g2rd<=	'0';
 						cur_g3rd<=	'0';
 					end if;
-					if rintline/=rintline_prev then
+					if r09_wr_event='1' then
+						-- R09 written: compare immediately with current raster.
+						rintline_prev<=rintline;
+						if rintline=raster then
+							rint_reg<='1';
+						else
+							rint_reg<='0';
+						end if;
+					elsif rintline/=rintline_prev then
 						rintline_prev<=rintline;
 						if rintline=raster then
 							rint_reg<='1';

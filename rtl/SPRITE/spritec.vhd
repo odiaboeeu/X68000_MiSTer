@@ -80,6 +80,7 @@ signal	sp_no	:std_logic_vector(6 downto 0);
 signal	sp_linenum	:std_logic_vector(9 downto 0);
 signal	linenum_adj	:std_logic_vector(8 downto 0);
 signal	sp_xpos	:std_logic_vector(3 downto 0);
+signal sp_count	:std_logic_vector(5 downto 0) := (others=>'0');
 signal	sp_ypos	:std_logic_vector(3 downto 0);
 signal	sp_dotx	:std_logic_vector(2 downto 0);
 signal	sp_doty	:std_logic_vector(2 downto 0);
@@ -305,6 +306,7 @@ begin
 				sp_no<=(others=>'0');
 				sp_state<=sp_IDLE;
 				sp_xpos<=(others=>'0');
+				sp_count<=(others=>'0');
 			elsif(ce = '1')then
 				if(hcomp='1')then
 					sp_state<=sp_IDLE;
@@ -313,6 +315,7 @@ begin
 					when sp_IDLE =>
 						if(state=st_SPRITE and proc_begin='1')then
 							sp_no<=(others=>'1');
+							sp_count<=(others=>'0');
 							sp_state<=sp_setno;
 						end if;
 					when sp_setno =>
@@ -329,13 +332,17 @@ begin
 							sp_yposl:=('0' & linenum_adj)-sprypos;
 							sp_ypos<=sp_yposl(3 downto 0);
 							sp_xpos<=(others=>'0');
+							sp_count<=sp_count+"000001";
 							sp_state<=sp_copy;
 						end if;
 					when sp_copy =>
 						if(sp_xpos<x"f")then
 							sp_xpos<=sp_xpos+x"1";
 						else
-							if(sp_no>lastspno)then
+							if sp_count="100000" then
+								-- 32 sprites selected: stop processing for this raster.
+								sp_state<=sp_END;
+							elsif(sp_no>lastspno)then
 								sp_no<=sp_no-1;
 								sp_state<=sp_setno;
 							else

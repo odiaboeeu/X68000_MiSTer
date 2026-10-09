@@ -1134,6 +1134,14 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 	          (hres(0)='1' and vres='0' and hfreq='1' and
 	           sp_vres='0' and vvbgn(0)='1')) else
 	       -- Advance the sprite line in applicable 15 kHz modes.
+	       -- In 15 kHz 512-line interlaced mode (hres(0)='1', hfreq='0',
+	       -- vres='1', vd1='0'), vaddrmod = vaddr(8:0) & field.
+	       -- field=0 gives even linenum (even PCG rows);
+	       -- field=1 gives odd linenum (odd PCG rows).
+	       -- The +1 offset shifts rows to the wrong field: remove it.
+	       -- VD='01' -> vd1=VD(1)='0' for 512-line interlaced at 15 kHz.
+	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u) when
+	         (hres(0)='1' and hfreq='0' and vres='1' and vd1='0') else
 	       std_logic_vector(unsigned(vaddrmod(9 downto 0)) + spr_y_adj_u + 1) when
 	         (hres(0)='1' and hfreq='0') else
 	       std_logic_vector(unsigned(vaddr) + (spr_y_adj_u sll 1)) when (double_scan='1' and sp_vres='1') else

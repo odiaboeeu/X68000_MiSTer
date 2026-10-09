@@ -951,7 +951,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						gclrbusyb<='0';
 						gclr_interlace_second<='0';
 					elsif(gclrbusyb='1' and gclrrast=raster)then
-						if(hfreq='0' and vd1='1' and gclr_interlace_second='0')then
+						if(hfreq='0' and vres='1' and vd1='0' and gclr_interlace_second='0')then
 							gclr_interlace_second<='1';
 						else
 							gclrbusyb<='0';

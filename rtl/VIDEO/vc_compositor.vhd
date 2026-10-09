@@ -154,7 +154,7 @@ begin
 
 		if spren = '0' and txten = '1' and tx_pal_eff = 0 then
 		    rep_source := SRC_TX;
-		    if unsigned(pri_tx) > unsigned(pri_gr) then
+		    if grpen = '0' or unsigned(pri_tx) > unsigned(pri_gr) then
 		        rep_color  := tx_color0;
 		        st_present := tx_color0 /= x"0000";
 		    else

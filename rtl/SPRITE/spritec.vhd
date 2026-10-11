@@ -80,6 +80,7 @@ signal	sp_no	:std_logic_vector(6 downto 0);
 signal	sp_linenum	:std_logic_vector(9 downto 0);
 signal	linenum_adj	:std_logic_vector(8 downto 0);
 signal	sp_xpos	:std_logic_vector(3 downto 0);
+signal sp_count	:std_logic_vector(5 downto 0) := (others=>'0');
 signal	sp_ypos	:std_logic_vector(3 downto 0);
 signal	sp_dotx	:std_logic_vector(2 downto 0);
 signal	sp_doty	:std_logic_vector(2 downto 0);
@@ -121,10 +122,6 @@ type bg_state_t is(
 );
 signal	bg_state	:bg_state_t;
 
-signal	bg0hoff_lat	:std_logic_vector(9 downto 0);
-signal	bg0voff_lat	:std_logic_vector(9 downto 0);
-signal	bg1hoff_lat	:std_logic_vector(9 downto 0);
-signal	bg1voff_lat	:std_logic_vector(9 downto 0);
 
 component sline
 port(
@@ -154,10 +151,6 @@ begin
 				if(hcomp='1')then
 					state<=st_BG0;
 					proc_begin<='1';
-					bg0hoff_lat<=bg0hoff;
-					bg0voff_lat<=bg0voff;
-					bg1hoff_lat<=bg1hoff;
-					bg1voff_lat<=bg1voff;
 				elsif(state=st_BG0)then
 					if(bg_state=bg_END)then
 						state<=st_BG1;
@@ -182,11 +175,11 @@ begin
 	bg_asel<=	bg0asel	when state=st_BG0 else
 				bg1asel	when state=st_BG1 else
 				'1';
-	bg_xmod<=	bg0hoff_lat+('0' & bg_x)     when state=st_BG0 else
-				bg1hoff_lat+('0' & bg_x) when state=st_BG1 else
+	bg_xmod<=	bg0hoff+('0' & bg_x)     when state=st_BG0 else
+				bg1hoff+('0' & bg_x) when state=st_BG1 else
 				(others=>'0');
-	bg_ymod<=	bg0voff_lat+('0' & linenum)     when state=st_BG0 else
-				bg1voff_lat+('0' & linenum) when state=st_BG1 else
+	bg_ymod<=	bg0voff+('0' & linenum)     when state=st_BG0 else
+				bg1voff+('0' & linenum) when state=st_BG1 else
 				(others=>'0');
 	bgaddrr0<=	bg_asel & bg_ymod(8 downto 3) & bg_xmod(8 downto 3);
 	bgaddrr1<=	bg_asel & bg_ymod(9 downto 4) & bg_xmod(9 downto 4);
@@ -313,6 +306,7 @@ begin
 				sp_no<=(others=>'0');
 				sp_state<=sp_IDLE;
 				sp_xpos<=(others=>'0');
+				sp_count<=(others=>'0');
 			elsif(ce = '1')then
 				if(hcomp='1')then
 					sp_state<=sp_IDLE;
@@ -321,6 +315,7 @@ begin
 					when sp_IDLE =>
 						if(state=st_SPRITE and proc_begin='1')then
 							sp_no<=(others=>'1');
+							sp_count<=(others=>'0');
 							sp_state<=sp_setno;
 						end if;
 					when sp_setno =>
@@ -337,13 +332,17 @@ begin
 							sp_yposl:=('0' & linenum_adj)-sprypos;
 							sp_ypos<=sp_yposl(3 downto 0);
 							sp_xpos<=(others=>'0');
+							sp_count<=sp_count+"000001";
 							sp_state<=sp_copy;
 						end if;
 					when sp_copy =>
 						if(sp_xpos<x"f")then
 							sp_xpos<=sp_xpos+x"1";
 						else
-							if(sp_no>lastspno)then
+							if sp_count="100000" then
+								-- 32 sprites selected: stop processing for this raster.
+								sp_state<=sp_END;
+							elsif(sp_no>lastspno)then
 								sp_no<=sp_no-1;
 								sp_state<=sp_setno;
 							else
@@ -374,9 +373,9 @@ begin
 				'0' when sp_wr='0' else
 				'1' when sprPRI/="00" else
 				'0';
-	sp1_wr<=sp_any_wr;
-	sp2_wr<=sp_any_wr;
-	sp3_wr<=sp_any_wr;
+	sp1_wr<=sp_any_wr when sprPRI="01" else '0';
+	sp2_wr<=sp_any_wr when sprPRI="10" else '0';
+	sp3_wr<=sp_any_wr when sprPRI="11" else '0';
 	sp1_wrdat<=sprCOLORd & dotin when sprPRI="01" else x"00";
 	sp2_wrdat<=sprCOLORd & dotin when sprPRI="10" else x"00";
 	sp3_wrdat<=sprCOLORd & dotin when sprPRI="11" else x"00";

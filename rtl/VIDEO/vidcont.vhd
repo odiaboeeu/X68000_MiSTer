@@ -1105,7 +1105,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						else
 							rint_reg<='0';
 						end if;
-					elsif hfreq='0' and
+					elsif (hfreq='0' or hres="00") and -- RINT hblank lead: 15 kHz, or 31 kHz 256-dot modes
 						rintline/="0000000000" and
 						rintline=raster+"0000000001" and
 						('0' & haddr)=rint_hblank_lead then

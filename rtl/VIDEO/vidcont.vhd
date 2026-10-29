@@ -353,6 +353,12 @@ signal	rastnum	:std_logic_vector(9 downto 0);
 signal rint_reg :std_logic := '0';
 signal rintline_prev :std_logic_vector(9 downto 0) := (others=>'0');
 signal rint_hblank_lead :std_logic_vector(10 downto 0);
+signal early15   :std_logic;
+signal snap15    :std_logic := '0';
+signal s15_hc_d  :std_logic := '0';
+signal s15_lcnt  :std_logic_vector(13 downto 0) := (others=>'0');
+signal s15_llen  :std_logic_vector(13 downto 0) := (others=>'0');
+signal s15_point :std_logic_vector(13 downto 0);
 signal r09_wr_toggle_meta :std_logic := '0';
 signal r09_wr_toggle_sync :std_logic := '0';
 signal r09_wr_toggle_prev :std_logic := '0';
@@ -565,8 +571,8 @@ begin
 					g2_voffset_pending <=g2_voffset;
 					g3_hoffset_pending <=g3_hoffset;
 					g3_voffset_pending <=g3_voffset;
-				elsif raster_offset_early_mode='1' and hblank='1' and
-				      hblank_d='0' and vaddr(0)='0' then
+				elsif snap15='1' or (raster_offset_early_mode='1' and hblank='1' and
+				      hblank_d='0' and vaddr(0)='0') then
 					t_hoffset_pending  <=t_hoffset;
 					t_voffset_pending  <=t_voffset;
 					g0_hoffset_pending <=g0_hoffset;
@@ -578,7 +584,7 @@ begin
 					g3_hoffset_pending <=g3_hoffset;
 					g3_voffset_pending <=g3_voffset;
 				elsif hcomp='1' then
-					if raster_offset_early_mode='1' then
+					if raster_offset_early_mode='1' or early15='1' then
 						t_hoffset_lat  <=t_hoffset_pending;
 						t_voffset_lat  <=t_voffset_pending;
 						g0_hoffset_lat <=g0_hoffset_pending;
@@ -902,6 +908,28 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 	end process;
 	r09_wr_event <= '1' when r09_wr_toggle_sync /= r09_wr_toggle_prev else '0';
 
+	-- 15 kHz 256-dot: snapshot scroll registers at a fixed point of the line,
+	-- like the mid-line snapshot of the 31 kHz double-scan mode
+	early15 <= '1' when hfreq='0' and hres="00" else '0';
+	process(vidclk) begin
+		if rising_edge(vidclk) then
+			s15_hc_d <= hcomp;
+			if hcomp='1' and s15_hc_d='0' then
+				s15_llen <= s15_lcnt;
+				s15_lcnt <= (others=>'0');
+			elsif s15_lcnt(13)='0' then
+				s15_lcnt <= s15_lcnt + "00000000000001";
+			end if;
+			if early15='1' and s15_lcnt=s15_point then
+				snap15 <= '1';
+			else
+				snap15 <= '0';
+			end if;
+		end if;
+	end process;
+	-- snapshot point: 1/8 of the previous line length
+	s15_point <= "000" & s15_llen(13 downto 3);
+
 	process(vidclk)
 	variable hvwidth	:std_logic_vector(10 downto 0);
 	begin
@@ -1001,7 +1029,7 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 					vviden_int<='1';
 					hviden<= '1';--not hblank;
 				elsif(hcomp='1')then
-					if raster_offset_early_mode='1' then
+					if raster_offset_early_mode='1' or early15='1' then
 						-- Consume the HBlank snapshot only at the normal line boundary.
 						-- This advances raster scroll changes without starting a memory
 						-- request early or changing the prefetch bank during HBlank.

@@ -121,6 +121,6 @@ begin
 		end if;
 	end process;
 
-	datout <= std_logic_vector(signal_acc(11 downto 0));
+	datout <= std_logic_vector(signal_acc(11 downto 2)) & "00";
 
 end rtl;

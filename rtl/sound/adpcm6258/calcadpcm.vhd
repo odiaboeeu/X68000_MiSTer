@@ -56,7 +56,7 @@ begin
 				lplayen <= playen;
 
 				if playen = '1' and lplayen = '0' then
-					signal_acc <= to_signed(-2, 13);
+					signal_acc <= to_signed(0, 13);
 					step_idx   <= 0;
 					decay_div  <= (others => '0');
 

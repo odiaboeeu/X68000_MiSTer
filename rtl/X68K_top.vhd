@@ -829,6 +829,7 @@ signal	ppi_pchoe	:std_logic;
 signal	ppi_pcli	:std_logic_vector(3 downto 0);
 signal	ppi_pclo	:std_logic_vector(3 downto 0);
 signal	ppi_pcloe	:std_logic;
+signal	ppi_pclo_eff	:std_logic_vector(3 downto 0);
 
 --MFP
 signal	mfp_odat	:std_logic_vector(7 downto 0);
@@ -4345,9 +4346,10 @@ begin
 	pStrB<=ppi_pcho(1) when ppi_pchoe='1' else 'Z';
 --	pJoyA(4)<='Z' when ppi_pcho(2)='0' else '0';
 --	pJoyA(5)<='Z' when ppi_pcho(3)='0' else '0';
-	pcm_clkdiv<=ppi_pclo(3 downto 2);
-	pcm_enL<=not ppi_pclo(1);
-	pcm_enR<=not ppi_pclo(0);
+	ppi_pclo_eff<=ppi_pclo when ppi_pcloe='1' else "1111";  -- RM210 pull-ups (CZ-634C/644C)
+	pcm_clkdiv<=ppi_pclo_eff(3 downto 2);
+	pcm_enL<=not ppi_pclo_eff(1);
+	pcm_enR<=not ppi_pclo_eff(0);
 	
 	process(vidclk) begin
 		if rising_edge(vidclk) then
@@ -4608,7 +4610,7 @@ begin
 				pcm_sndL <= (others=>'0');
 				pcm_sndR <= (others=>'0');
 			elsif (snd_ce = '1') then
-				if (pcm_enL='1' or ppi_pcloe='0') then
+				if (pcm_enL='1') then
 					pcm_sndL<=(pcm_snd(11) & pcm_snd & "000");
 				else
 					-- Soft mute: ramp toward zero at snd_ce rate
@@ -4618,7 +4620,7 @@ begin
 						pcm_sndL <= pcm_sndL + 1;
 					end if;
 				end if;
-				if (pcm_enR='1' or ppi_pcloe='0') then
+				if (pcm_enR='1') then
 					pcm_sndR<=(pcm_snd(11) & pcm_snd & "000");
 				else
 					if (pcm_sndR(15)='0' and pcm_sndR /= x"0000") then

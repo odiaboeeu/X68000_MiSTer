@@ -4319,7 +4319,7 @@ begin
 	
 	ppi_csn<='0' when abus(23 downto 3)=(x"e9a00" & '0') else '1';
 	ppi_pchi <= (others=>'0');
-	ppi_pcli <= (others=>'0');
+	ppi_pcli <= (others=>'1');  -- RM210 pull-ups (CZ-634C/644C)
 
 	PPI	: e8255 port map(
 		CSn		=>ppi_csn,

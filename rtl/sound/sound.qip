@@ -1,3 +1,4 @@
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) adpcm6258/e6258.vhd ]
+set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) adpcm6258/adpcm_board_flt.vhd ]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) adpcm6258/calcadpcm.vhd ]
 set_global_assignment -name VHDL_FILE [file join $::quartus(qip_path) midiif/em3802.vhd ]

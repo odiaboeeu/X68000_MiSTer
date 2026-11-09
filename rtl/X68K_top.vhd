@@ -801,6 +801,7 @@ signal	pcm_wr	:std_logic;
 signal	pcm_doe	:std_logic;
 signal	pcm_drq	:std_logic;
 signal	pcm_snd	:std_logic_vector(11 downto 0);
+signal	pcm_flt	:std_logic_vector(15 downto 0);
 signal	pcm_sndL	:std_logic_vector(15 downto 0);
 signal	pcm_sndR	:std_logic_vector(15 downto 0);
 signal	pcm_enL,pcm_enR	:std_logic;
@@ -2732,6 +2733,15 @@ port(
 end component;
 
 
+component adpcm_board_flt
+port(
+	clk	:in std_logic;
+	rstn	:in std_logic;
+	din	:in std_logic_vector(11 downto 0);
+	dout	:out std_logic_vector(15 downto 0)
+);
+end component;
+
 component pcmclk
 port(
 	clkmode	:in std_logic;
@@ -4601,6 +4611,8 @@ begin
 		rstn		=>srstn
 	);
 	
+	pcmflt	:adpcm_board_flt port map(clk=>sndclk,rstn=>srstn,din=>pcm_snd,dout=>pcm_flt);
+
 	-- pcm_sndL<= (others=>'0') when (pcm_enL='0' and ppi_pcloe='1') else (pcm_snd(11) & pcm_snd & "000");
 	-- pcm_sndR<= (others=>'0') when (pcm_enR='0' and ppi_pcloe='1') else (pcm_snd(11) & pcm_snd & "000");
 	
@@ -4611,7 +4623,7 @@ begin
 				pcm_sndR <= (others=>'0');
 			elsif (snd_ce = '1') then
 				if (pcm_enL='1') then
-					pcm_sndL<=(pcm_snd(11) & pcm_snd & "000");
+					pcm_sndL<=pcm_flt;
 				else
 					-- Soft mute: ramp toward zero at snd_ce rate
 					if (pcm_sndL(15)='0' and pcm_sndL /= x"0000") then
@@ -4621,7 +4633,7 @@ begin
 					end if;
 				end if;
 				if (pcm_enR='1') then
-					pcm_sndR<=(pcm_snd(11) & pcm_snd & "000");
+					pcm_sndR<=pcm_flt;
 				else
 					if (pcm_sndR(15)='0' and pcm_sndR /= x"0000") then
 						pcm_sndR <= pcm_sndR - 1;

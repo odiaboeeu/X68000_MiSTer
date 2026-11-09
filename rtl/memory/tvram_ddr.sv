@@ -79,33 +79,43 @@ module tvram_ddr (
 	wire t0_miss = t0_rd && (!t0_valid || t0_tag != t0_addr[21:6]);
 	wire t1_miss = t1_rd && (!t1_valid || t1_tag != t1_addr[21:6]);
 
-	wire fill_we0 = (state == S_VID_DATA) && DDRAM_DOUT_READY && fill_t0 && ram_ce;
-	wire fill_we1 = (state == S_VID_DATA) && DDRAM_DOUT_READY && fill_t1 && ram_ce;
+	// Registro de entrada do f2sdram (HPS). Sem ele, DDRAM_DOUT ia direto do
+	// bloco rigido para a porta de escrita das MLABs (T*Rcache, cpy_buffer),
+	// com hold no limite em clk_ram. DOUT e READY atrasam juntos 1 ciclo.
+	logic [63:0] ddr_dout_r   = 64'd0;
+	logic        ddr_dready_r = 1'b0;
+	always_ff @(posedge rclk) begin
+		ddr_dout_r   <= DDRAM_DOUT;
+		ddr_dready_r <= DDRAM_DOUT_READY;
+	end
+
+	wire fill_we0 = (state == S_VID_DATA) && ddr_dready_r && fill_t0 && ram_ce;
+	wire fill_we1 = (state == S_VID_DATA) && ddr_dready_r && fill_t1 && ram_ce;
 
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T00Rcache (
-		.data(DDRAM_DOUT[15:0]),  .rdaddress(t0_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[15:0]),  .rdaddress(t0_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we0), .q(t0_rdat0));
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T01Rcache (
-		.data(DDRAM_DOUT[31:16]), .rdaddress(t0_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[31:16]), .rdaddress(t0_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we0), .q(t0_rdat1));
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T02Rcache (
-		.data(DDRAM_DOUT[47:32]), .rdaddress(t0_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[47:32]), .rdaddress(t0_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we0), .q(t0_rdat2));
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T03Rcache (
-		.data(DDRAM_DOUT[63:48]), .rdaddress(t0_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[63:48]), .rdaddress(t0_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we0), .q(t0_rdat3));
 
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T10Rcache (
-		.data(DDRAM_DOUT[15:0]),  .rdaddress(t1_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[15:0]),  .rdaddress(t1_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we1), .q(t1_rdat0));
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T11Rcache (
-		.data(DDRAM_DOUT[31:16]), .rdaddress(t1_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[31:16]), .rdaddress(t1_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we1), .q(t1_rdat1));
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T12Rcache (
-		.data(DDRAM_DOUT[47:32]), .rdaddress(t1_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[47:32]), .rdaddress(t1_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we1), .q(t1_rdat2));
 	CACHEMEMWN #(.awidth(6), .ramtype("MLAB")) T13Rcache (
-		.data(DDRAM_DOUT[63:48]), .rdaddress(t1_addr[5:0]), .rdclock(vclk),
+		.data(ddr_dout_r[63:48]), .rdaddress(t1_addr[5:0]), .rdclock(vclk),
 		.wraddress(fill_count), .wrclock(rclk), .wren(fill_we1), .q(t1_rdat3));
 
 	logic        cpu_done = 1'b0;
@@ -279,7 +289,7 @@ module tvram_ddr (
 			end
 
 			S_VID_DATA: begin
-				if (DDRAM_DOUT_READY) begin
+				if (ddr_dready_r) begin
 					fill_count <= fill_count + 1'd1;
 					if (fill_count == 6'd63) begin
 						if (fill_t0) t0_valid <= 1'b1;
@@ -297,8 +307,8 @@ module tvram_ddr (
 			end
 
 			S_CPU_RD_DATA: begin
-				if (DDRAM_DOUT_READY) begin
-					cpu_rdat <= select_word(DDRAM_DOUT, cpu_lane);
+				if (ddr_dready_r) begin
+					cpu_rdat <= select_word(ddr_dout_r, cpu_lane);
 					cpu_done <= 1'b1;
 					state    <= S_IDLE;
 				end
@@ -324,8 +334,8 @@ module tvram_ddr (
 			end
 
 			S_CPU_RMW_RD_DATA: begin
-				if (DDRAM_DOUT_READY) begin
-					rmw_result <= (select_word(DDRAM_DOUT, cpu_lane) & ~cpu_mask_l) |
+				if (ddr_dready_r) begin
+					rmw_result <= (select_word(ddr_dout_r, cpu_lane) & ~cpu_mask_l) |
 					              (cpu_wdat_l & cpu_mask_l);
 					state <= S_CPU_RMW_WR_CMD;
 				end
@@ -354,8 +364,8 @@ module tvram_ddr (
 			end
 
 			S_CPY_RD_DATA: begin
-				if (DDRAM_DOUT_READY) begin
-					cpy_buffer[cpy_count[4:0]] <= DDRAM_DOUT;
+				if (ddr_dready_r) begin
+					cpy_buffer[cpy_count[4:0]] <= ddr_dout_r;
 					cpy_count <= cpy_count + 1'd1;
 					if (cpy_count == 6'd31) begin
 						cpy_count <= 6'd0;

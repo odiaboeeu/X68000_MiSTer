@@ -36,7 +36,6 @@ architecture rtl of calcadpcm is
 	signal signal_acc : signed(12 downto 0);
 	signal step_idx   : integer range 0 to 48;
 	signal lplayen    : std_logic;
-	signal decay_div  : unsigned(8 downto 0);
 
 begin
 
@@ -51,14 +50,12 @@ begin
 				signal_acc <= to_signed(0, 13);
 				step_idx   <= 0;
 				lplayen    <= '0';
-				decay_div  <= (others => '0');
 			elsif ce = '1' then
 				lplayen <= playen;
 
 				if playen = '1' and lplayen = '0' then
 					signal_acc <= to_signed(0, 13);
 					step_idx   <= 0;
-					decay_div  <= (others => '0');
 
 				elsif playen = '0' then
 					step_idx <= 0;
@@ -73,7 +70,6 @@ begin
 					end if;
 
 				elsif datwr = '1' and datemp = '0' then
-						decay_div  <= (others => '0');
 						stepval := STEP_TABLE(step_idx);
 						delta := stepval / 8;
 						if datin(0) = '1' then delta := delta + stepval / 4; end if;

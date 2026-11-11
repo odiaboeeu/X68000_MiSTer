@@ -153,31 +153,33 @@ begin
 				playwr<='0';
 				datuse<='0';
 				calcsft<='0';
-				if(play_start='1')then
-					divcount<=0;
-					sftcount<=0;
-				elsif(playen='1' and sft='1' and startup_wait='0')then
+				-- MSM6258 datasheet (MPU mode): VCK runs continuously while AC=L.
+				-- PLAY START takes effect at the next VCK edge (tWVS); the sample
+				-- clock phase is not reset by commands.
+				if(sft='1')then
 					if(sftcount>0)then
 						sftcount<=sftcount-1;
 					else
 						sftcount<=3;
-						calcsft<='1';
+						if(playen='1' and startup_wait='0')then
+							calcsft<='1';
+						end if;
 						if(divcount=0)then
-							playdat<=nxtbuf0;
-							if(bufcount>0)then
-								datemp<='0';
-							else
-								datemp<='1';
+							if(playen='1' and startup_wait='0')then
+								playdat<=nxtbuf0;
+								if(bufcount>0)then
+									datemp<='0';
+								else
+									datemp<='1';
+								end if;
+								playwr<='1';
+								datuse<='1';
 							end if;
-							playwr<='1';
-							datuse<='1';
 							case clkdiv is
 							when "00" =>
 								divcount<=255;
 							when "01" =>
 								divcount<=191;
-							when "10" =>
-								divcount<=127;
 							when others =>
 								divcount<=127;
 							end case;

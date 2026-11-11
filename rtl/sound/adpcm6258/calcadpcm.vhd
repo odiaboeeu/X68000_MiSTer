@@ -62,22 +62,8 @@ begin
 
 				elsif playen = '0' then
 					step_idx <= 0;
-					if signal_acc > 0 then
-						if decay_div = 0 then
-							decay_div <= to_unsigned(399, 9);
-							signal_acc <= signal_acc - 1;
-						else
-							decay_div <= decay_div - 1;
-						end if;
-					elsif signal_acc < 0 then
-						if decay_div = 0 then
-							decay_div <= to_unsigned(399, 9);
-							signal_acc <= signal_acc + 1;
-						else
-							decay_div <= decay_div - 1;
-						end if;
-					end if;
-
+					-- MSM6258 datasheet (MPU mode): DAOUT holds its level after STOP.
+					-- The DC return to zero is done by the board high-pass (adpcm_board_flt).
 				elsif datwr = '1' and datemp = '1' then
 					step_idx <= 0;
 					if signal_acc > 0 then

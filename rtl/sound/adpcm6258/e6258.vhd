@@ -46,7 +46,6 @@ signal	nxtbuf0,nxtbuf1	:std_logic_vector(3 downto 0);
 signal	bufcount	:integer range 0 to 2;
 signal	sftcount	:integer range 0 to 3;
 signal	divcount	:integer range 0 to 255;
-signal	play_start	:std_logic;
 signal	startup_wait	:std_logic;
 signal	playen	:std_logic;
 signal	recen	:std_logic;
@@ -85,11 +84,9 @@ begin
 				nxtbuf0<=(others=>'0');
 				nxtbuf1<=(others=>'0');
 				drq<='0';
-				play_start<='0';
 				startup_wait<='0';
 				ldatwr:="00";
 			elsif(snd_ce = '1')then
-				play_start<='0';
 				if(datwr='1')then
 					drq<='0';
 				end if;
@@ -120,7 +117,6 @@ begin
 								nxtbuf0<=(others=>'0');
 								nxtbuf1<=(others=>'0');
 								drq<='1';
-								play_start<='1';
 								startup_wait<='1';
 							end if;
 						elsif(datinbuf(2)='1')then

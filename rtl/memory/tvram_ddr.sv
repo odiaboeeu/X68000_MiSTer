@@ -374,20 +374,24 @@ module tvram_ddr (
 				end
 			end
 
+			// cpy_burst: os 32 qwords do cpy_buffer vao em um unico burst de escrita
+			// (Avalon: ADDR/BURSTCNT/BE amostrados no 1o beat; cada beat aceito com
+			// WE=1 e BUSY=0; DIN avanca a cada beat aceito; WE fica alto ate o ultimo).
 			S_CPY_WR_CMD: begin
 				if (!DDRAM_WE) begin
-					DDRAM_ADDR     <= DDR_BASE | {13'd0, cpy_dst_l, 5'd0} |
-					                  {24'd0, cpy_count[4:0]};
-					DDRAM_BURSTCNT <= 8'd1;
-					DDRAM_DIN      <= cpy_buffer[cpy_count[4:0]];
+					DDRAM_ADDR     <= DDR_BASE | {13'd0, cpy_dst_l, 5'd0};
+					DDRAM_BURSTCNT <= 8'd32;
+					DDRAM_DIN      <= cpy_buffer[5'd0];
 					DDRAM_BE       <= plane_be(cpy_plane_l);
 					DDRAM_WE       <= 1'b1;
+					cpy_count      <= 6'd0;
 				end else if (!DDRAM_BUSY) begin
-					DDRAM_WE <= 1'b0;
 					if (cpy_count == 6'd31) begin
-						cpy_ack <= ~cpy_ack;
-						state   <= S_IDLE;
+						DDRAM_WE <= 1'b0;
+						cpy_ack  <= ~cpy_ack;
+						state    <= S_IDLE;
 					end else begin
+						DDRAM_DIN <= cpy_buffer[cpy_count[4:0] + 5'd1];
 						cpy_count <= cpy_count + 1'd1;
 					end
 				end

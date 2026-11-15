@@ -139,6 +139,21 @@ signal vdisp_vid    :std_logic_vector(7 downto 0);
 signal lh_vid       :std_logic;
 signal vres_vid     :std_logic_vector(1 downto 0);
 signal hres_vid     :std_logic_vector(1 downto 0);
+-- Atraso de linhas na leitura dos atributos de sprite (scan/render)
+constant SPR_DELAY	:integer range 0 to 3 := 3;
+type shadow_t is array (0 to 511) of std_logic_vector(35 downto 0);
+signal	shadow		:shadow_t;
+attribute ramstyle : string;
+attribute ramstyle of shadow : signal is "M10K, no_rw_check";
+signal	live_addr	:std_logic_vector(6 downto 0);
+signal	cp_idx		:std_logic_vector(7 downto 0) := (others=>'0');
+signal	cp_idx_d	:std_logic_vector(6 downto 0) := (others=>'0');
+signal	cp_run		:std_logic := '0';
+signal	cp_run_d	:std_logic := '0';
+signal	wslot		:integer range 0 to 3 := 0;
+signal	rslot		:integer range 0 to 3 := 0;
+signal	shq			:std_logic_vector(35 downto 0) := (others=>'0');
+
 begin
 	reg0_cs<='1' when addr(23 downto 10)="11101011000000" and addr(2 downto 1)="00" else '0';
 	reg1_cs<='1' when addr(23 downto 10)="11101011000000" and addr(2 downto 1)="01" else '0';
@@ -156,14 +171,14 @@ begin
 	reg2_wr<=spr_bwr when reg2_cs='1' else "00";
 	reg3_wr<=spr_bwr when reg3_cs='1' else "00";
 	
-	reg0h	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_h,(others=>'0'),reg0_wr(1) and sys_ce,'0',reg0rd(15 downto 8),reg0dat(15 downto 8));
-	reg0l	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_l,(others=>'0'),reg0_wr(0) and sys_ce,'0',reg0rd( 7 downto 0),reg0dat( 7 downto 0));
-	reg1h	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_h,(others=>'0'),reg1_wr(1) and sys_ce,'0',reg1rd(15 downto 8),reg1dat(15 downto 8));
-	reg1l	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_l,(others=>'0'),reg1_wr(0) and sys_ce,'0',reg1rd( 7 downto 0),reg1dat( 7 downto 0));
-	reg2h	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_h,(others=>'0'),reg2_wr(1) and sys_ce,'0',reg2rd(15 downto 8),reg2dat(15 downto 8));
-	reg2l	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_l,(others=>'0'),reg2_wr(0) and sys_ce,'0',reg2rd( 7 downto 0),reg2dat( 7 downto 0));
-	reg3h	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_h,(others=>'0'),reg3_wr(1) and sys_ce,'0',reg3rd(15 downto 8),reg3dat(15 downto 8));
-	reg3l	:sprreg port map(addr(9 downto 3),sprno,sclk,vclk,spr_wrdat_l,(others=>'0'),reg3_wr(0) and sys_ce,'0',reg3rd( 7 downto 0),reg3dat( 7 downto 0));
+	reg0h	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_h,(others=>'0'),reg0_wr(1) and sys_ce,'0',reg0rd(15 downto 8),reg0dat(15 downto 8));
+	reg0l	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_l,(others=>'0'),reg0_wr(0) and sys_ce,'0',reg0rd( 7 downto 0),reg0dat( 7 downto 0));
+	reg1h	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_h,(others=>'0'),reg1_wr(1) and sys_ce,'0',reg1rd(15 downto 8),reg1dat(15 downto 8));
+	reg1l	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_l,(others=>'0'),reg1_wr(0) and sys_ce,'0',reg1rd( 7 downto 0),reg1dat( 7 downto 0));
+	reg2h	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_h,(others=>'0'),reg2_wr(1) and sys_ce,'0',reg2rd(15 downto 8),reg2dat(15 downto 8));
+	reg2l	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_l,(others=>'0'),reg2_wr(0) and sys_ce,'0',reg2rd( 7 downto 0),reg2dat( 7 downto 0));
+	reg3h	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_h,(others=>'0'),reg3_wr(1) and sys_ce,'0',reg3rd(15 downto 8),reg3dat(15 downto 8));
+	reg3l	:sprreg port map(addr(9 downto 3),live_addr,sclk,vclk,spr_wrdat_l,(others=>'0'),reg3_wr(0) and sys_ce,'0',reg3rd( 7 downto 0),reg3dat( 7 downto 0));
 
 	rddat<=	reg0rd when reg0_cs='1' else
 			reg1rd when reg1_cs='1' else
@@ -186,13 +201,75 @@ begin
 			'1' when reg3_cs='1' else
 			reg00doe or reg02doe or reg04doe or reg06doe or reg08doe or reg0adoe or reg0cdoe or reg0edoe or reg10doe;
 
-	xpos<=	reg0dat(9 downto 0);
-	ypos<=	reg1dat(9 downto 0);
-	VR<=	reg2dat(15);
-	HR<=	reg2dat(14);
-	COLOR<=	reg2dat(11 downto 8);
-	PATNO<=	reg2dat(7 downto 0);
-	PRI<=	reg3dat(1 downto 0);
+	live_addr <= sprno when SPR_DELAY=0 else cp_idx(6 downto 0);
+
+	gen_live: if SPR_DELAY=0 generate
+		xpos<=	reg0dat(9 downto 0);
+		ypos<=	reg1dat(9 downto 0);
+		VR<=	reg2dat(15);
+		HR<=	reg2dat(14);
+		COLOR<=	reg2dat(11 downto 8);
+		PATNO<=	reg2dat(7 downto 0);
+		PRI<=	reg3dat(1 downto 0);
+	end generate;
+
+	gen_delay: if SPR_DELAY>0 generate
+		-- A cada hcomp, copia a tabela viva (128 sprites) para o slot de um anel.
+		-- Scan e render leem o slot mais antigo (SPR_DELAY linhas atras).
+		process(vclk,rstn)
+		variable w_n :integer range 0 to 3;
+		begin
+			if rstn='0' then
+				cp_run<='0'; cp_run_d<='0';
+				cp_idx<=(others=>'0'); cp_idx_d<=(others=>'0');
+				wslot<=0;
+				rslot<=1;
+			elsif rising_edge(vclk) then
+				cp_run_d<=cp_run;
+				cp_idx_d<=cp_idx(6 downto 0);
+				if cp_run='1' then
+					cp_idx<=cp_idx+1;
+					if cp_idx=127 then
+						cp_run<='0';
+					end if;
+				end if;
+				if vid_ce='1' and hcomp='1' then
+					cp_idx<=(others=>'0');
+					cp_run<='1';
+					if wslot=SPR_DELAY then w_n:=0; else w_n:=wslot+1; end if;
+					wslot<=w_n;
+					if w_n=SPR_DELAY then rslot<=0; else rslot<=w_n+1; end if;
+				end if;
+			end if;
+		end process;
+
+		process(vclk)
+		begin
+			if rising_edge(vclk) then
+				if cp_run_d='1' then
+					shadow(wslot*128+conv_integer(cp_idx_d)) <=
+						reg0dat(9 downto 0) & reg1dat(9 downto 0) &
+						reg2dat(15) & reg2dat(14) & reg2dat(11 downto 8) & reg2dat(7 downto 0) &
+						reg3dat(1 downto 0);
+				end if;
+			end if;
+		end process;
+
+		process(vclk)
+		begin
+			if rising_edge(vclk) then
+				shq <= shadow(rslot*128+conv_integer(sprno));
+			end if;
+		end process;
+
+		xpos<=	shq(35 downto 26);
+		ypos<=	shq(25 downto 16);
+		VR<=	shq(15);
+		HR<=	shq(14);
+		COLOR<=	shq(13 downto 10);
+		PATNO<=	shq(9 downto 2);
+		PRI<=	shq(1 downto 0);
+	end generate;
 	
 	reg00	:ramreg generic map(x"eb0800") port map(addr,reg00rdat,wrdat,b_rd,b_wr,reg00doe,reg00dat,sclk,sys_ce,rstn);
 	reg02	:ramreg generic map(x"eb0802") port map(addr,reg02rdat,wrdat,b_rd,b_wr,reg02doe,reg02dat,sclk,sys_ce,rstn);

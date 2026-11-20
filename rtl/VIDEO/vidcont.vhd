@@ -352,6 +352,10 @@ signal	gpalin_eff	:std_logic_vector(15 downto 0);
 signal	rastnum	:std_logic_vector(9 downto 0);
 signal rint_reg :std_logic := '0';
 signal rintline_prev :std_logic_vector(9 downto 0) := (others=>'0');
+signal rint_seen_line :std_logic := '0';
+signal raster_seen_d  :std_logic_vector(9 downto 0) := (others=>'0');
+signal rint_cur :std_logic := '0';
+signal rint_age :integer range 0 to 15 := 15;
 signal rint_hblank_lead :std_logic_vector(10 downto 0);
 signal early15   :std_logic;
 signal snap15    :std_logic := '0';
@@ -930,6 +934,27 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 	-- snapshot point: 1/8 of the previous line length
 	s15_point <= "000" & s15_llen(13 downto 3);
 
+	-- RINT chain detector: tracks RINT on the current line and how many lines ago
+	-- the last RINT happened. Used to skip the hblank lead for
+	-- line-by-line RINT chains (heuristic, no documentary basis).
+	process(vidclk)begin
+		if rising_edge(vidclk) then
+			raster_seen_d <= raster;
+			if raster /= raster_seen_d then
+				if rint_cur = '1' then
+					rint_age <= 0;
+				elsif rint_age /= 15 then
+					rint_age <= rint_age + 1;
+				end if;
+				rint_cur <= '0';
+			elsif rint_reg = '1' then
+				rint_cur <= '1';
+			end if;
+		end if;
+	end process;
+	-- lead is skipped if RINT was active on this line or within the previous 4 lines
+	rint_seen_line <= '1' when rint_cur = '1' or rint_age < 4 else '0';
+
 	process(vidclk)
 	variable hvwidth	:std_logic_vector(10 downto 0);
 	begin
@@ -1134,7 +1159,8 @@ g80_ddat<=	g1_rdat( 7 downto 4) & g0_rdat( 3 downto 0);
 						else
 							rint_reg<='0';
 						end if;
-					elsif (hfreq='0' or hres="00") and -- RINT hblank lead: 15 kHz, or 31 kHz 256-dot modes
+					-- RINT hblank lead, skipped inside line-by-line RINT chains (heuristic)
+					elsif (hfreq='0' or hres="00") and rint_seen_line='0' and
 						rintline/="0000000000" and
 						rintline=raster+"0000000001" and
 						('0' & haddr)=rint_hblank_lead then

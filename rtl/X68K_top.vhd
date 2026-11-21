@@ -770,6 +770,7 @@ signal	opm_sndl		:std_logic_vector(15 downto 0);
 signal	opm_sndr		:std_logic_vector(15 downto 0);
 signal	opm_mixL		:std_logic_vector(15 downto 0);
 signal	opm_mixR		:std_logic_vector(15 downto 0);
+signal	opm_fltL,opm_fltR	:std_logic_vector(15 downto 0);
 signal	iowait_opm		:std_logic;
 signal	opm_wstate	:integer range 0 to 3;
 
@@ -2742,6 +2743,17 @@ port(
 );
 end component;
 
+component opm_board_flt
+port(
+	clk	:in std_logic;
+	rstn	:in std_logic;
+	dinL	:in std_logic_vector(15 downto 0);
+	dinR	:in std_logic_vector(15 downto 0);
+	doutL	:out std_logic_vector(15 downto 0);
+	doutR	:out std_logic_vector(15 downto 0)
+);
+end component;
+
 component pcmclk
 port(
 	clkmode	:in std_logic;
@@ -4671,8 +4683,11 @@ begin
 	
 	iowait_opm<='1' when (opm_csn='0' and (b_wrn(0)='0' or b_rdn='0') and opm_wstate/=3) else '0';
 
-	opm_mixL <= opm_sndL(15) & opm_sndL(15 downto 1);
-	opm_mixR <= opm_sndR(15) & opm_sndR(15 downto 1);
+	-- CZ-634C/644C summing amp pole (R246/R247 // C228/C229, ~18.8 kHz) on the OPM path
+	opmflt	:opm_board_flt port map(clk=>sndclk,rstn=>srstn,dinL=>opm_sndL,dinR=>opm_sndR,doutL=>opm_fltL,doutR=>opm_fltR);
+
+	opm_mixL <= opm_fltL(15) & opm_fltL(15 downto 1);
+	opm_mixR <= opm_fltR(15) & opm_fltR(15 downto 1);
 
 	mixL	:addsat generic map(16) port map(opm_mixL,pcm_sndL,mix_sndL,open,open);
 	mixR	:addsat generic map(16) port map(opm_mixR,pcm_sndR,mix_sndR,open,open);
